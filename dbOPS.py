@@ -9,6 +9,8 @@ import dateparser
 import socket
 from requests import exceptions as Rexceptions
 from urllib3 import exceptions as Uexceptions
+import pandas as pd
+import numpy as np
 
 TRADEABLE_ASSETS = ["BTC", "ETH", "BNB"]
 
@@ -72,6 +74,24 @@ def parseDataRow(tupleRow):
 		dataRow["diff"] = Decimal(tupleRow[10])
 	return dataRow
 
+def sqlToDataframe(sqlCursor):
+	data = {
+		"openTime": [],
+		"symbol": [],
+		"open" : [],
+		"high" : [],
+		"low" : [],
+		"close" : [],
+		"macd" : [],
+		"sig" : [],
+		"histogram": []
+	}
+	for timepoint in sqlCursor:
+		try:
+			pass
+		except:
+			pass
+	return pd.DataFrame(data)
 
 class DB:
 	def __init__(self):
@@ -100,7 +120,7 @@ class DB:
 			print(f"--> Connection reset, skipping")
 		if len(kline) > 0:
 			for candle in kline:
-				query = f"INSERT INTO `data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`, `ema12`, `ema26`, `macd`, `sig9`, `diff`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}', NULL, NULL, NULL, NULL, NULL);"
+				query = f"INSERT INTO `data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`, `macd`, `sig`, `histogram`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}', NULL, NULL, NULL);"
 				#print(query)
 				cur.execute(query)
 				conn.commit()
@@ -117,6 +137,7 @@ class DB:
 			toErase = count-limit
 			query = f"DELETE FROM data_{interval} WHERE symbol = '{symbol}' ORDER BY openTime ASC LIMIT {toErase}"
 			cur.execute(query)
+			conn.commit()
 		conn.close()
 	
 	def _insertSymbol(self, data):
@@ -190,7 +211,7 @@ class DB:
 				last.append(point)
 		conn.close()
 		return last
-	def getFullData(self, symbol,intervalData):
+	def getDataFrame(self, symbol,intervalData):
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -202,13 +223,11 @@ class DB:
 		except mariadb.Error as e:
 			print(f"Error connecting to MariaDB Platform: {e}")
 		cur = conn.cursor()
-		cur.execute(f"SELECT * FROM data_{intervalData} WHERE symbol = '{symbol}' ORDER BY openTime ASC")
-		data = []
-		for point in cur:
-			row = parseDataRow(point)
-			data.append(row)
+		query = f"SELECT * FROM data_{intervalData} WHERE symbol = '{symbol}' ORDER BY openTime ASC"
+		pdQuery = pd.read_sql_query(query, conn)
+		df = pd.DataFrame(pdQuery, columns=["openTime","symbol","open","high","low","close", "macd", "sig", "histogram"])
 		conn.close()
-		return data
+		return df
 	def getSymbols(self):
 		"""Obtiene una lista de pares limpia de la base de datos.
 		Requiere tratamiento porque la base de datos devuelve tuplas.
@@ -319,7 +338,7 @@ class DB:
 				conn.commit()'''
 		#################################
 		conn.close()
-	def updateData(self, symbol, intervalData, data, indicatorName, indicatorData):
+	def updateData(self, intervalData, dataframe):
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -331,8 +350,32 @@ class DB:
 		except mariadb.Error as e:
 				print(f"Error connecting to MariaDB Platform: {e}")
 		cur = conn.cursor()
-		for ind, val in enumerate(data):
-			query = f"UPDATE data_{intervalData} SET {indicatorName} = '{indicatorData[ind]}' WHERE symbol = '{symbol}' AND openTime = '{val['openTime']}'"
+		for index, row in dataframe.iterrows():
+			queryStart = f"UPDATE data_{intervalData} SET "
+			macdBIT = ""
+			sigBIT = ""
+			histogramBIT = ""
+			##
+			macd = row["macd"]
+			sig = row["sig"]
+			histogram = row["histogram"]
+			##
+			if np.isnan(macd):
+				macdBIT = f"macd = NULL, "
+			else:
+				macdBIT = f"macd = '{macd}',"
+			##
+			if np.isnan(sig):
+				sigBIT = f"sig = NULL, "
+			else:
+				sigBIT = f"sig = '{sig}',"
+			##
+			if np.isnan(histogram):
+				histogramBIT = f"histogram = NULL "
+			else:
+				histogramBIT = f"histogram = '{histogram}' "
+			endQuery = f"WHERE symbol = '{row['symbol']}' AND openTime = '{row['openTime']}'"
+			cur.execute(queryStart+macdBIT+sigBIT+histogramBIT+endQuery)
 		conn.commit()
 		conn.close()
 	def getAPI(self, user):
@@ -396,10 +439,10 @@ class DB:
 				#print(i[0])
 				query = f"UPDATE symbols SET {serveType} = '{datetime.now()}' WHERE symbol = '{i['symbol']}'"
 				cur.execute(query)
-				conn.commit()
+			conn.commit()
 			conn.close()
 			return toServe
 
-'''if __name__ == "__main__":
-	db1 = DB()'''
+if __name__ == "__main__":
+	db1 = DB()
 

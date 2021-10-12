@@ -14,6 +14,8 @@ services:
       - dbData:/var/lib/mysql
   grafana:
     image: grafana/grafana
+    environment:
+      GF_INSTALL_PLUGINS: ae3e-plotly-panel
     ports:
       - 3000:3000
     volumes:
@@ -29,15 +31,21 @@ services:
       - mariadb
   dbworker:
     build:
-      dockerfile: workerImage
+      dockerfile: worker.dockerfile
     command: testDeploy.py david dbWorker
     depends_on:
       - mariadb
   dbminer:
     build:
-      dockerfile: workerImage
+      dockerfile: worker.dockerfile
     command: testDeploy.py david dbMiner
     depends_on:
+      - mariadb
+  dbcalculator:
+    build: 
+      dockerfile: worker.dockerfile
+    command: testDeploy.py david dbCalculator
+    depends_on: 
       - mariadb
 volumes:
   grafanaConf:

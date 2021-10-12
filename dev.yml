@@ -11,20 +11,19 @@ services:
       MYSQL_USER: binance
       MYSQL_PASSWORD: binance
     volumes:
-      - dbData:/var/lib/mysql
+      - dbDataDEV:/var/lib/mysql
   adminer:
     image: adminer
     #restart: always
     ports:
-      - 8080:8080
+      - 8070:8080
     depends_on: 
       - mariadb
-  #dbcalculator:
-    #build: 
-      #dockerfile: workerImage
-    #command: testDeploy.py david dbCalculator
-    #depends_on: 
-      #- mariadb
+  testdataframe:
+    build:
+      dockerfile: worker.dockerfile
+    command: testDeploy.py test
+    depends_on:
+      - mariadb
 volumes:
-  grafanaConf:
   dbDataDEV:
