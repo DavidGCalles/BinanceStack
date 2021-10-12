@@ -1,0 +1,67 @@
+{% extends 'navBar.html' %}
+
+
+{% block content %}
+<div class="alert alert-dismissible justify-content-center alert-danger">
+	<div class="row">
+		<button type="button" class="close" data-dismiss="alert">&times;</button>
+		<h1 class="fas fa-wrench col-sm-2 text-center"></h1>
+		<h2 class="col-sm-8 text-center">Bienvenido a la version Alpha de la plataforma.</h2>
+		<h1 class="fas fa-wrench col-sm-2 text-center"></h1>
+	</div>
+	<div class="row">
+		<span class="col-sm-2"></span>
+		<p class="col-sm-8 text-center">Utiliza la barra de navegación para visitar las diferentes secciones.</p>
+		<span class="col-sm-2"></span>
+	</div>
+	<div class="row">
+		<span class="col-sm-2"></span>
+		<p class="col-sm-8 text-center">Perdona el desorden y el escaso talento artistico. Estamos trabajando para
+		que el backend sea lo mas robusto y fiable posible primero.</p>
+		<span class="col-sm-2"></span>
+	</div>
+</div>
+<div class="container">
+	<div class="card-deck">
+		<div class="card">
+			<div class="card-header text-center"><h2>Scalper</h2></div>
+			<div class="card-body">
+				<h3 class="text-center">Efectividad <span class="badge badge-success ">100</span></h3>
+				<h3 class="text-center">Trading <span class="badge badge-primary" onclick="location.href='{% url 'Trading' %}?shift=True'">1</span>
+					<span class="badge badge-secondary" onclick="location.href='{% url 'Trading' %}?shift=False'">4</span>
+				</h3>
+				<h3  class="text-center">Profit <span class="badge badge-danger">0</span></h3>
+			</div>
+		</div>
+		<div class="card">
+			<div class="card-header text-center"><h2>Intra Day</h2></div>
+			<div class="card-body">
+				<h3 class="text-center">Efectividad <span class="badge badge-success ">100</span></h3>
+				<h3 class="text-center">Trading <span class="badge badge-primary" onclick="location.href='{% url 'Trading' %}?shift=True'">1</span>
+					<span class="badge badge-secondary" onclick="location.href='{% url 'Trading' %}?shift=False'">4</span>
+				</h3>
+				<h3  class="text-center">Profit <span class="badge badge-danger">0</span></h3>
+			</div>
+		</div>
+	</div>
+</div>
+<div class="container">
+	<div class="card">
+		<div class="card-header text-center"><h2>Funcionamiento de nodos</h2></div>
+		<div class="card-body">
+			<ul class="card-deck">
+				{%for node in '123'%}
+				<li class="card">
+					<h3 class="card-header text-center">{{node}}</h3>
+					<div class="card-body">
+					<p>192.168.1.x <span class="badge badge-success">Encendido</span></p>
+					<p>Moneda: XxXyYy</p>
+					<p>Debug: <span class="badge badge-danger">False</span></p>
+					</div>
+				</li>
+				{%endfor%}
+			</ul>
+		</div>
+	</div>
+</div>
+{% endblock %}

@@ -1,0 +1,67 @@
+{% extends 'navBar.html' %}
+
+
+{% block content %}
+<div class="w3-cell-row">
+<div class="w3-cell">
+	<h2>Estadisticas generales</h2>
+	<ul>
+		<li>Ganados: {{general.good}}</li>
+		<li>Perdidos: {{general.bad}}</li>
+		<li>Efectividad: {{general.percGood}} %</li>
+		<li>Duracion media: {{general.duration}}</li>
+	</ul>
+</div>
+{% for asset in assets %}
+<div class="w3-cell">
+	<h2>Resumen de Trades {{asset.name}}</h2>
+	<ul>
+		<li>Ganados: {{asset.good}}</li>
+		<li>Perdidos: {{asset.bad}}</li>
+		<li>Efectividad: {{asset.percGood}} %</li>
+		<li>Beneficio: {{asset.benefit}} {{asset.name}}</li>
+	</ul>
+</div>
+{% endfor %}
+</div>
+<h2>Lista de Trades Completa</h2>
+<table class="w3-table-all">
+<th class="w3-center">RESULTADO</th>
+<th class="w3-center">PAR</th>
+<th class="w3-center">STOP</th>
+<th class="w3-center">EVAL</th>
+<th class="w3-center">LIMIT</th>
+<th class="w3-center">SELL</th>
+<th class="w3-center">BASE QTY</th>
+<th class="w3-center">ASSET QTY</th>
+<th class="w3-center">INICIO</th>
+<th class="w3-center">FIN</th>
+<th class="w3-center">DURACION</th>
+{% for row in syms %}
+<tr class="w3-center">
+	{% if row.tradeEND == True %}
+		<td class="fas fa-thumbs-up w3-center w3-green"></td>
+	{% else %}
+		<td class="fas fa-skull w3-center w3-red"></td>
+	{% endif %}
+	<td class="w3-center"><a href="{% url 'Graph' %}?
+									sym={{row.symbol}}&
+									shift={{row.shift}}&
+									evalTS={{row.evalTS}}&
+									endTS={{row.endTS}}&
+									evalPrice={{row.evalPrice}}&
+									stopPrice={{row.stop}}&
+									limitPrice={{row.limit}}">{{row.symbol}}</a></td>
+	<td class="w3-center">{{row.stop}}</td>
+	<td class="w3-center">{{row.evalPrice}}</td>
+	<td class="w3-center">{{row.limit}}</td>
+	<td class="w3-center">{{row.sell}}</td>
+	<td class="w3-center">{{row.baseQty}}</td>
+	<td class="w3-center">{{row.assetQty}}</td>
+	<td class="w3-center">{{row.evalTS}}</td>
+	<td class="w3-center">{{row.endTS}}</td>
+	<td class="w3-center">{{row.duration}}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}

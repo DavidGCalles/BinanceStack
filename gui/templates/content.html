@@ -1,0 +1,10 @@
+{% extends 'navBar.html' %}
+
+
+{% block content %}
+<h1 class="w3-button" onclick='genericCall(["sym"],["ETH"],"getSym.php","PARES")'>PRUEBA ETH</h1>
+<h1 class="w3-button" onclick='genericCall(["sym"],["BNB"],"getSym.php","PARES")'>PRUEBA BNB</h1>
+<h1 class="w3-button" onclick='genericCall(["sym"],["BTCEUR"],"getGraph.php","PARES")'>PRUEBA Grafico</h1>
+<div id="PARES"></div>
+
+{% endblock %}

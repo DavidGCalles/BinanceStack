@@ -1,0 +1,20 @@
+{% extends 'navBar.html' %}
+
+
+{% block content %}
+<div class="w3-left">
+	<h1 class="w3-center">{{sym}}</h1>
+	<h2 class="w3-center">Eval. Data</h2>
+	<p>evalTS: {{evalTS}}</p>
+	<p>endTS: {{endTS}}</p>
+	<p>Hour MIN|AVG|MAX: {{data.hourMAM}}</p>
+	<h2 class="w3-center">Market Order</h2>
+	<p>buyPrice:</p>
+	<p>qty:</p>
+	<h2 class="w3-center">OCO Order</h2>
+	<p>limitPrice: {{data.limit}}</p>
+	<p>stopPrice: {{data.stop}}</p>
+</div>
+<div class="w3-right">{{graph|safe}}</div>
+
+{% endblock %}

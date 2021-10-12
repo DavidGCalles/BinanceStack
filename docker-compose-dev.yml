@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  mariadb:
+    build:
+      dockerfile: mariaImage
+    #restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: example
+      MYSQL_DATABASE: binance
+      MYSQL_USER: binance
+      MYSQL_PASSWORD: binance
+    volumes:
+      - dbData:/var/lib/mysql
+  adminer:
+    image: adminer
+    #restart: always
+    ports:
+      - 8080:8080
+    depends_on: 
+      - mariadb
+  #dbcalculator:
+    #build: 
+      #dockerfile: workerImage
+    #command: testDeploy.py david dbCalculator
+    #depends_on: 
+      #- mariadb
+volumes:
+  grafanaConf:
+  dbDataDEV:

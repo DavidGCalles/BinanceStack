@@ -1,0 +1,6 @@
+__pycache__/
+gui/gui/__pycache__/
+gui/data/__pycache__/
+gui/display/__pycache__/
+gui/__pycache__/
+.vscode/

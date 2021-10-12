@@ -1,0 +1,9 @@
+{% extends 'navBar.html' %}
+
+
+{% block content %}
+{{perStartTS|safe}}
+{% for graph in graphs %}
+	{{graph|safe}}
+{% endfor %}
+{% endblock %}

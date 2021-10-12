@@ -1,0 +1,25 @@
+{% extends 'navBar.html' %}
+
+
+{% block content %}
+<table class="w3-table-all">
+<th class="w3-center">PAR</th>
+<th class="w3-center">STOP</th>
+<th class="w3-center">EVAL</th>
+<th class="w3-center">LIMIT</th>
+<th class="w3-center">BASE QTY</th>
+<th class="w3-center">ASSET QTY</th>
+<th class="w3-center">INICIO</th>
+{% for row in syms %}
+<tr class="w3-center">
+	<td class="w3-center">{{row.symbol}}</td>
+	<td class="w3-center w3-red">{{row.stop}}</td>
+	<td class="w3-center">{{row.evalPrice}}</td>
+	<td class="w3-center w3-green">{{row.limit}}</td>
+	<td class="w3-center">{{row.baseQty}}</td>
+	<td class="w3-center">{{row.assetQty}}</td>
+	<td class="w3-center">{{row.evalTS}}</td>
+</tr>
+{% endfor %}
+</table>
+{% endblock %}
