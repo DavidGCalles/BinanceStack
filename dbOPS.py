@@ -227,9 +227,10 @@ class DB:
 					"'"+minNotional+"'",
 					"'"+minQty+"'",
 					"'"+stepSize+"'",
-					"'"+str(precision)+"'"]
+					str(precision)]
 		querySTR = ",".join(queryARR)
-		st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize, precision) VALUES({querySTR})"
+		#st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize, precision) VALUES ({querySTR});"
+		st = f"INSERT INTO symbols (symbol) VALUES ('{data['symbol']}')"
 		print(st)
 		cur.execute(st)
 		conn.commit()
