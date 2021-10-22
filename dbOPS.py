@@ -42,6 +42,7 @@ def parseSymbol(symbol):
 	d["1M"] = symbol[9]
 	d["dbMiner"] = symbol[10]
 	d["dbCalculator"] = symbol[11]
+	d["MACDentry"] = symbol[12]
 	return d
 
 def parseDataRow(tupleRow):
@@ -139,8 +140,12 @@ class DB:
 			cur.execute(query)
 			conn.commit()
 		conn.close()
-	
-	def _insertSymbol(self, data):
+	'''def _insertSymbol(self, data):
+		"""SE ROMPE TODO!!!! Hay que refactorizar esta funcion para no sufrir cada vez que se modifique el scheme.
+
+		Args:
+			data ([type]): [description]
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -184,10 +189,51 @@ class DB:
 					"NULL","NULL"]
 		querySTR = ",".join(queryARR)
 		st = f"INSERT INTO symbols VALUES({querySTR})"
-		#print(st)
+		print(st)
 		cur.execute(st)
 		conn.commit()
-		conn.close()
+		conn.close()'''
+def _insertSymbol(self, data):
+	"""SE ROMPE TODO!!!! Hay que refactorizar esta funcion para no sufrir cada vez que se modifique el scheme.
+		Args:
+		data ([type]): [description]
+	"""
+	try:
+		conn = mariadb.connect(
+			user=self.user,
+			password=self.password,
+			host=self.host,
+			port=self.port,
+			database=self.database
+			)
+	except mariadb.Error as e:
+		print(f"Error connecting to MariaDB Platform: {e}")
+	cur = conn.cursor()
+	minNotional = "-"
+	minQty = "-"
+	stepSize = "-"
+	precision = "-"
+	for filt in data["filters"]:
+		if filt["filterType"] == "MIN_NOTIONAL":
+			minNotional = filt["minNotional"]
+		elif filt["filterType"] == "LOT_SIZE":
+			minQty = filt["minQty"]
+			stepSize = filt["stepSize"]
+	try:
+		precision = data["baseAssetPrecision"]
+	except KeyError:
+		pass
+	queryARR = ["'"+data["symbol"]+"'",
+				"'"+minNotional+"'",
+				"'"+minQty+"'",
+				"'"+stepSize+"'",
+				"'"+str(precision)+"'"]
+	querySTR = ",".join(queryARR)
+	st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize, precision) VALUES({querySTR})"
+	print(st)
+	cur.execute(st)
+	conn.commit()
+	conn.close()
 	def getLastPoint(self,symbol,intervalData):
 		try:
 			conn = mariadb.connect(

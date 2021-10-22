@@ -9,7 +9,7 @@ from sys import argv
 import pandas as pd
 import pandas_ta as ta
 
-workerTypes = ["test","dbWorker", "dbMiner", "dbCalculator"]
+workerTypes = ["test","dbWorker", "dbMiner", "dbCalculator", "MACDentry"]
 
 db = DB()
 
@@ -31,7 +31,7 @@ class Worker:
 		#print(f"lastCheck: {self.lastCheck}")
 		#print(f"now: {now}")
 		if self.lastCheck == None or now >= self.lastCheck + self.updateTime:
-			print(f"Próxima comprobación: {now+self.updateTime}")
+			#print(f"Próxima comprobación: {now+self.updateTime}")
 			self.lastCheck = now
 			return True
 		else:
@@ -126,6 +126,20 @@ class dbCalculator(Worker):
 					self._calculate(pair["symbol"], "1d")
 				self.lastCheck = db.getOlderServe(self.work)
 
+class MACDentry(Worker):
+	def __init__(self, user, workType):
+		super().__init__(user, workType)
+		self.updateTime = timedelta(hours=1)
+	def startWork(self):
+		self.lastCheck = db.getOlderServe(self.work)
+		while True:
+			if self._internalTick() == True:
+				pairs = db.servePairs(self.work)
+				for pair in pairs:
+					price = self.client.get_all_tickers(symbol=pair["symbol"])
+					print(f'{pair["symbol"]}: price')
+				self.lastCheck = db.getOlderServe(self.work)
+
 if __name__ == "__main__":
 	#test_general()
 	##argv1 = USER/test
@@ -141,6 +155,8 @@ if __name__ == "__main__":
 					worker = dbMiner(argv[1], argv[2])
 				elif argv[2] == "dbCalculator":
 					worker = dbCalculator(argv[1], argv[2])
+				elif argv[2] == "MACDentry":
+					worker = MACDentry(argv[1], argv[2])
 				try:
 					worker.startWork()
 				except KeyboardInterrupt:
