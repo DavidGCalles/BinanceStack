@@ -136,6 +136,7 @@ class MACDentry(Worker):
 			if self._internalTick() == True:
 				pairs = db.servePairs(self.work)
 				for pair in pairs:
+					###get_all_tickers no acepta simbolo. No funciona porque no pide el precio.
 					price = self.client.get_all_tickers(symbol=pair["symbol"])
 					print(f'{pair["symbol"]}: price')
 				self.lastCheck = db.getOlderServe(self.work)
