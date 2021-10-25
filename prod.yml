@@ -35,18 +35,18 @@ services:
     command: testDeploy.py david dbWorker
     depends_on:
       - mariadb
-  #dbminer:
-    #build:
-      #dockerfile: worker.dockerfile
-    #command: testDeploy.py david dbMiner
-    #depends_on:
-      #- mariadb
-  #dbcalculator:
-    #build: 
-      #dockerfile: worker.dockerfile
-    #command: testDeploy.py david dbCalculator
-    #depends_on: 
-      #- mariadb
+  dbminer:
+    build:
+      dockerfile: worker.dockerfile
+    command: testDeploy.py david dbMiner
+    depends_on:
+      - mariadb
+  dbcalculator:
+    build: 
+      dockerfile: worker.dockerfile
+    command: testDeploy.py david dbCalculator
+    depends_on: 
+      - mariadb
   #macdentry:
     #build: 
       #dockerfile: worker.dockerfile
