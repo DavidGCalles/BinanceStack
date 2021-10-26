@@ -181,6 +181,18 @@ class DB:
 		conn.commit()
 		conn.close()
 	def getLastPoint(self,symbol,intervalData):
+		"""Obtiene el punto mas reciente de las tablas de datos, del symbolo requerido.
+		Esta función se usa para determinar los rangos de datos solicitados a la API de
+		binance.
+
+		Args:
+			symbol (string): Cadena del par necesario.
+			intervalData (string): "4h" o "1D", referentes a las tablas de datos almacenados.
+
+		Returns:
+			[list]: Lista de un solo punto que contiene la entrada solicitada. 
+			#? Una lista de un solo punto parece un poco absurda. Quizá habría que factorizar esta funcion de algun modo.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
