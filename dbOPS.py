@@ -12,10 +12,23 @@ from urllib3 import exceptions as Uexceptions
 import pandas as pd
 import numpy as np
 
+"""Lista de assets con los que se va a hacer trading. Esto limita la cantidad de pares almacenados desde el exchange a aquellos
+que tengan estas monedas como base (segundo componente)
+"""
 TRADEABLE_ASSETS = ["BTC", "ETH", "BNB"]
 
 def parseKline(kline):
-	"""Reconvierte las kline de Binance en el formato utilizado en la base de datos propia para optimizar almacenamiento y acceso"""
+	"""Trata los klines de la API de binance para obtener los datos necesarios y almacenarlos
+	en base de datos o utilizarlos. Función de conveniencia.
+	Convierte los datos de STR al tipo necesario para trabajar con ellos.
+
+	Args:
+		kline (list): punto de datos de la API de binance. Es una lista que sigue este
+		https://binance-docs.github.io/apidocs/spot/en/#kline-candlestick-data orden
+
+	Returns:
+		[dict]: Diccionario con los datos necesarios para el bot y la BBDD.
+	"""
 	newKline = []
 	for candle in kline:
 		newCandle = {
@@ -29,6 +42,16 @@ def parseKline(kline):
 	return newKline
 
 def parseSymbol(symbol):
+	#! Esta función hay que modificarla cada vez que modifiquemos la tabla symbols. Hay que mejorarla. 
+	#TODO: Recibir una lista de Keys de la base de datos y conformar dinamicamente el diccionario.
+	"""Recibe una tupla con los datos de trading de un simbolo y los convierte en un diccionario para trabajar mejor.
+
+	Args:
+		symbol (tuple): tupla con la información ya almacenada de BBDD.
+
+	Returns:
+		[dict]: Diccionario con los mismos datos organizados por key.
+	"""
 	d = {}
 	d["symbol"] = symbol[0]
 	d["minNotional"] = symbol[1]
@@ -45,63 +68,32 @@ def parseSymbol(symbol):
 	d["MACDentry"] = symbol[12]
 	return d
 
-def parseDataRow(tupleRow):
-	dataRow = {}
-	dataRow["openTime"] = tupleRow[0]
-	dataRow["symbol"] = tupleRow[1]
-	dataRow["open"] = Decimal(tupleRow[2])
-	dataRow["high"] = Decimal(tupleRow[3])
-	dataRow["low"] = Decimal(tupleRow[4])
-	dataRow["close"] = Decimal(tupleRow[5])
-	if tupleRow[6] == None:
-		dataRow["ema12"] = None
-	else:
-		dataRow["ema12"] = Decimal(tupleRow[6])
-	if tupleRow[7] == None:
-		dataRow["ema26"] = None
-	else:
-		dataRow["ema26"] = Decimal(tupleRow[7])
-	if tupleRow[8] == None:
-		dataRow["macd"] = None
-	else:
-		dataRow["macd"] = Decimal(tupleRow[8])
-	if tupleRow[9] == None:
-		dataRow["sig9"] = None
-	else:
-		dataRow["sig9"] = Decimal(tupleRow[9])
-	if tupleRow[10] == None:
-		dataRow["diff"] = None
-	else:
-		dataRow["diff"] = Decimal(tupleRow[10])
-	return dataRow
-
-def sqlToDataframe(sqlCursor):
-	data = {
-		"openTime": [],
-		"symbol": [],
-		"open" : [],
-		"high" : [],
-		"low" : [],
-		"close" : [],
-		"macd" : [],
-		"sig" : [],
-		"histogram": []
-	}
-	for timepoint in sqlCursor:
-		try:
-			pass
-		except:
-			pass
-	return pd.DataFrame(data)
-
 class DB:
+	"""Clase que engloba las conexiones, variables y funciones relacionadas con la base de datos.
+	"""
 	def __init__(self):
+		"""Inicialización. No requiere ningun argumento porque los datos son hardcoded.
+		"""
 		self.user = f"binance"
 		self.password = "binance"
 		self.host = "mariadb"
 		self.port = 3306
 		self.database = "binance"
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), limit = 100):
+		#! Determina las cuestiones horarias (UTC) del funcionamiento y explicalas!!!!
+		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
+		Recibe una fecha de entrada y salida para saber los datos requeridos. También implementa
+		un mecanismo de bufer circular, donde "limit" es el numero de puntos de datos relacionados
+		que se almacenarán en total, eliminando los mas antiguos según entran nuevos (FIFO).
+
+		Args:
+			client (binance.Client): Instancia de cliente de binance para hacer las peticiones a la api.
+			symbol (string): Par de monedas requerido.
+			interval (string): Cadena que, en este momento solo puede ser  "4h" o "1d". Esta muy enlazado a las tablas de la BBDD
+			start (datetime.datetime): Fecha de comienzo 
+			end (datetime.datetime, optional): Fecha de final. Defaults to datetime.now().
+			limit (int, optional): Limite de puntos de datos en los que el bufer actua. Defaults to 100.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -140,63 +132,16 @@ class DB:
 			cur.execute(query)
 			conn.commit()
 		conn.close()
-	'''def _insertSymbol(self, data):
-		"""SE ROMPE TODO!!!! Hay que refactorizar esta funcion para no sufrir cada vez que se modifique el scheme.
+	def _insertSymbol(self, data):
+		"""Funcion para insertar los simbolos y sus datos en la tabla Symbols.
+
+		He tenido que prescindir de actualizar el valor "precision" porque me daba errores SQL que no
+		podia solucionar.
+		#? Trabajar en esto. Algun dia tendremos que saber porque sucede o necesitaremos ese valor. SEGURO.
 
 		Args:
-			data ([type]): [description]
-		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		minNotional = "-"
-		minQty = "-"
-		stepSize = "-"
-		precision = "-"
-		acierto = "0"
-		total = "0"
-		percent = "0"
-		s1 = "0"
-		m1 = "0"
-		for filt in data["filters"]:
-			if filt["filterType"] == "MIN_NOTIONAL":
-				minNotional = filt["minNotional"]
-			elif filt["filterType"] == "LOT_SIZE":
-				minQty = filt["minQty"]
-				stepSize = filt["stepSize"]
-		try:
-			precision = data["baseAssetPrecision"]
-		except KeyError:
-			pass
-		queryARR = ["'"+data["symbol"]+"'",
-					"'"+minNotional+"'",
-					"'"+minQty+"'",
-					"'"+stepSize+"'",
-					"'"+str(precision)+"'",
-					"'"+acierto+"'",
-					"'"+total+"'",
-					"'"+percent+"'",
-					"'"+s1+"'",
-					"'"+m1+"'",
-					"NULL","NULL"]
-		querySTR = ",".join(queryARR)
-		st = f"INSERT INTO symbols VALUES({querySTR})"
-		print(st)
-		cur.execute(st)
-		conn.commit()
-		conn.close()'''
-	def _insertSymbol(self, data):
-		"""SE ROMPE TODO!!!! Hay que refactorizar esta funcion para no sufrir cada vez que se modifique el scheme.
-			Args:
-			data ([type]): [description]
+			data (dict): Diccionario directo desde la API de binance. Esta funcion es llamada por cada par
+			en los datos resultantes del exchange. 
 		"""
 		try:
 			conn = mariadb.connect(
@@ -236,6 +181,18 @@ class DB:
 		conn.commit()
 		conn.close()
 	def getLastPoint(self,symbol,intervalData):
+		"""Obtiene el punto mas reciente de las tablas de datos, del symbolo requerido.
+		Esta función se usa para determinar los rangos de datos solicitados a la API de
+		binance.
+
+		Args:
+			symbol (string): Cadena del par necesario.
+			intervalData (string): "4h" o "1D", referentes a las tablas de datos almacenados.
+
+		Returns:
+			[list]: Lista de un solo punto que contiene la entrada solicitada. 
+			#? Una lista de un solo punto parece un poco absurda. Quizá habría que factorizar esta funcion de algun modo.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -259,6 +216,15 @@ class DB:
 		conn.close()
 		return last
 	def getDataFrame(self, symbol,intervalData):
+		"""Obtiene un pandas dataframe del simbolo e intervalo solicitados.
+
+		Args:
+			symbol (string): Cadena del par necesario.
+			intervalData (string): "4h" o "1D", referentes a las tablas de datos almacenados.
+
+		Returns:
+			[pandas.Dataframe]: Dataframe con todos los datos del simbolo requerido. 
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -304,6 +270,12 @@ class DB:
 		conn.close()
 		return clean
 	def updateSymbols(self, client):
+		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
+		o elimina los que ya estan fuera de lista.
+
+		Args:
+			client (binance.Client): Cliente binance para solicitar los pares del exchange.
+		"""
 		symDict = self.getSymbols()
 		exchDict = client.get_exchange_info()["symbols"]
 		try:
@@ -386,6 +358,13 @@ class DB:
 		#################################
 		conn.close()
 	def updateData(self, intervalData, dataframe):
+		"""Actualiza las tablas de "data" con datos proporcionados en un pandas dataframe.
+
+		Args:
+			intervalData (string): "4h" o "1D"
+			dataframe (pandas.Dataframe): Dataframe que contiene los datos precalculados restantes en la base de datos.
+			Estos datos son MACD, signal, histogram.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -426,6 +405,15 @@ class DB:
 		conn.commit()
 		conn.close()
 	def getAPI(self, user):
+		"""Obtiene la clave de api y secreto de un usuario desde la tabla users.
+		#! Atencion, altamente inseguro. Simplemente queria que funcionase.
+
+		Args:
+			user (string): Nombre del usuario.
+
+		Returns:
+			[list]: Lista compuesta de [API_KEY, API_SECRET] en cadenas.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -444,6 +432,16 @@ class DB:
 			apiKEYS.append(idAPI[2])		
 		return apiKEYS
 	def getOlderServe(self, serveType):
+		"""Recupera la fecha más antigua de servicio de un par en la tabla symbols.
+		Para más información sobre como funcionan los timers de servicio, referirse
+		a documentacion exterior.
+
+		Args:
+			serveType (string): Tipo de servicio del que consultamos el timer.
+
+		Returns:
+			datetime.Datetime: Fecha más antigua de servicio.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -466,29 +464,41 @@ class DB:
 				conn.close()
 				return None
 	def servePairs(self, serveType, order = "ASC", limit = 20):
-			try:
-				conn = mariadb.connect(
-					user=self.user,
-					password=self.password,
-					host=self.host,
-					port=self.port,
-					database=self.database
-					)
-			except mariadb.Error as e:
-				print(f"Error connecting to MariaDB Platform: {e}")
-			cur = conn.cursor()
-			query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
+		"""Sirve pares desde base de datos. Maneja que pares servir por las columnas
+		de servicio. Los actualiza en la base de datos para mantener los timers.
+
+
+		Args:
+			serveType (string): Cadena que indica el servicio.
+			order (str, optional): Coger los X primeros o los X ultimos. Defaults to "ASC".
+			limit (int, optional): Cantidad de simbolos servidos. Defaults to 20.
+
+		Returns:
+			list: Lista de diccionarios de simbolos. 
+		"""
+		try:
+			conn = mariadb.connect(
+				user=self.user,
+				password=self.password,
+				host=self.host,
+				port=self.port,
+				database=self.database
+				)
+		except mariadb.Error as e:
+			print(f"Error connecting to MariaDB Platform: {e}")
+		cur = conn.cursor()
+		query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
+		cur.execute(query)
+		toServe = []
+		for pair in cur:
+			toServe.append(parseSymbol(pair))
+		for i in toServe:
+			#print(i[0])
+			query = f"UPDATE symbols SET {serveType} = '{datetime.now()}' WHERE symbol = '{i['symbol']}'"
 			cur.execute(query)
-			toServe = []
-			for pair in cur:
-				toServe.append(parseSymbol(pair))
-			for i in toServe:
-				#print(i[0])
-				query = f"UPDATE symbols SET {serveType} = '{datetime.now()}' WHERE symbol = '{i['symbol']}'"
-				cur.execute(query)
-			conn.commit()
-			conn.close()
-			return toServe
+		conn.commit()
+		conn.close()
+		return toServe
 
 if __name__ == "__main__":
 	db1 = DB()
