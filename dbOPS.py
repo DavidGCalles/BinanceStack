@@ -270,6 +270,12 @@ class DB:
 		conn.close()
 		return clean
 	def updateSymbols(self, client):
+		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
+		o elimina los que ya estan fuera de lista.
+
+		Args:
+			client (binance.Client): Cliente binance para solicitar los pares del exchange.
+		"""
 		symDict = self.getSymbols()
 		exchDict = client.get_exchange_info()["symbols"]
 		try:
@@ -352,6 +358,13 @@ class DB:
 		#################################
 		conn.close()
 	def updateData(self, intervalData, dataframe):
+		"""Actualiza las tablas de "data" con datos proporcionados en un pandas dataframe.
+
+		Args:
+			intervalData (string): "4h" o "1D"
+			dataframe (pandas.Dataframe): Dataframe que contiene los datos precalculados restantes en la base de datos.
+			Estos datos son MACD, signal, histogram.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -392,6 +405,15 @@ class DB:
 		conn.commit()
 		conn.close()
 	def getAPI(self, user):
+		"""Obtiene la clave de api y secreto de un usuario desde la tabla users.
+		#! Atencion, altamente inseguro. Simplemente queria que funcionase.
+
+		Args:
+			user (string): Nombre del usuario.
+
+		Returns:
+			[list]: Lista compuesta de [API_KEY, API_SECRET] en cadenas.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
