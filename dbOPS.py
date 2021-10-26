@@ -432,6 +432,16 @@ class DB:
 			apiKEYS.append(idAPI[2])		
 		return apiKEYS
 	def getOlderServe(self, serveType):
+		"""Recupera la fecha más antigua de servicio de un par en la tabla symbols.
+		Para más información sobre como funcionan los timers de servicio, referirse
+		a documentacion exterior.
+
+		Args:
+			serveType (string): Tipo de servicio del que consultamos el timer.
+
+		Returns:
+			datetime.Datetime: Fecha más antigua de servicio.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -454,29 +464,41 @@ class DB:
 				conn.close()
 				return None
 	def servePairs(self, serveType, order = "ASC", limit = 20):
-			try:
-				conn = mariadb.connect(
-					user=self.user,
-					password=self.password,
-					host=self.host,
-					port=self.port,
-					database=self.database
-					)
-			except mariadb.Error as e:
-				print(f"Error connecting to MariaDB Platform: {e}")
-			cur = conn.cursor()
-			query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
+		"""Sirve pares desde base de datos. Maneja que pares servir por las columnas
+		de servicio. Los actualiza en la base de datos para mantener los timers.
+
+
+		Args:
+			serveType (string): Cadena que indica el servicio.
+			order (str, optional): Coger los X primeros o los X ultimos. Defaults to "ASC".
+			limit (int, optional): Cantidad de simbolos servidos. Defaults to 20.
+
+		Returns:
+			list: Lista de diccionarios de simbolos. 
+		"""
+		try:
+			conn = mariadb.connect(
+				user=self.user,
+				password=self.password,
+				host=self.host,
+				port=self.port,
+				database=self.database
+				)
+		except mariadb.Error as e:
+			print(f"Error connecting to MariaDB Platform: {e}")
+		cur = conn.cursor()
+		query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
+		cur.execute(query)
+		toServe = []
+		for pair in cur:
+			toServe.append(parseSymbol(pair))
+		for i in toServe:
+			#print(i[0])
+			query = f"UPDATE symbols SET {serveType} = '{datetime.now()}' WHERE symbol = '{i['symbol']}'"
 			cur.execute(query)
-			toServe = []
-			for pair in cur:
-				toServe.append(parseSymbol(pair))
-			for i in toServe:
-				#print(i[0])
-				query = f"UPDATE symbols SET {serveType} = '{datetime.now()}' WHERE symbol = '{i['symbol']}'"
-				cur.execute(query)
-			conn.commit()
-			conn.close()
-			return toServe
+		conn.commit()
+		conn.close()
+		return toServe
 
 if __name__ == "__main__":
 	db1 = DB()
