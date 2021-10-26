@@ -216,6 +216,15 @@ class DB:
 		conn.close()
 		return last
 	def getDataFrame(self, symbol,intervalData):
+		"""Obtiene un pandas dataframe del simbolo e intervalo solicitados.
+
+		Args:
+			symbol (string): Cadena del par necesario.
+			intervalData (string): "4h" o "1D", referentes a las tablas de datos almacenados.
+
+		Returns:
+			[pandas.Dataframe]: Dataframe con todos los datos del simbolo requerido. 
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
