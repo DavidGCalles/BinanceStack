@@ -68,6 +68,21 @@ def parseSymbol(symbol):
 	d["MACDentry"] = symbol[12]
 	return d
 
+def parseData(responseTuple):
+	fieldNames = ["openTime", "symbol", "open", "high", "low", "close", "macd", "sig", "histogram"]
+	d = {}
+	for ind, val in enumerate(fieldNames):
+		d[val] = fieldNames[ind]
+	return d
+
+def parseSQLtoDict(fieldNames, responseTuple):
+	"""Esta funcion va a sustituir a parseSymbol y parseData
+	De hecho, las vamos a reconstruir a su semejanza. Es hasta elegante."""
+	d = {}
+	for ind, val in enumerate(fieldNames):
+		d[val] = fieldNames[ind]
+	return d
+
 class DB:
 	"""Clase que engloba las conexiones, variables y funciones relacionadas con la base de datos.
 	"""
@@ -499,6 +514,26 @@ class DB:
 		conn.commit()
 		conn.close()
 		return toServe
+	def serveData(self, symbol, interval="FULL"):
+		"""[summary]
+
+		Args:
+			symbol ([type]): [description]
+			interval (str, optional): [description]. Defaults to "FULL".
+		"""
+		try:
+			conn = mariadb.connect(
+				user=self.user,
+				password=self.password,
+				host=self.host,
+				port=self.port,
+				database=self.database
+				)
+		except mariadb.Error as e:
+			print(f"Error connecting to MariaDB Platform: {e}")
+		cur = conn.cursor()
+		query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
+		cur.execute(query)
 
 if __name__ == "__main__":
 	db1 = DB()
