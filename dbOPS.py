@@ -12,10 +12,23 @@ from urllib3 import exceptions as Uexceptions
 import pandas as pd
 import numpy as np
 
+"""Lista de assets con los que se va a hacer trading. Esto limita la cantidad de pares almacenados desde el exchange a aquellos
+que tengan estas monedas como base (segundo componente)
+"""
 TRADEABLE_ASSETS = ["BTC", "ETH", "BNB"]
 
 def parseKline(kline):
-	"""Reconvierte las kline de Binance en el formato utilizado en la base de datos propia para optimizar almacenamiento y acceso"""
+	"""Trata los klines de la API de binance para obtener los datos necesarios y almacenarlos
+	en base de datos o utilizarlos. Función de conveniencia.
+	Convierte los datos de STR al tipo necesario para trabajar con ellos.
+
+	Args:
+		kline (list): punto de datos de la API de binance. Es una lista que sigue este
+		https://binance-docs.github.io/apidocs/spot/en/#kline-candlestick-data orden
+
+	Returns:
+		[dict]: Diccionario con los datos necesarios para el bot y la BBDD.
+	"""
 	newKline = []
 	for candle in kline:
 		newCandle = {
@@ -29,6 +42,16 @@ def parseKline(kline):
 	return newKline
 
 def parseSymbol(symbol):
+	#! Esta función hay que modificarla cada vez que modifiquemos la tabla symbols. Hay que mejorarla. 
+	#TODO: Recibir una lista de Keys de la base de datos y conformar dinamicamente el diccionario.
+	"""Recibe una tupla con los datos de trading de un simbolo y los convierte en un diccionario para trabajar mejor.
+
+	Args:
+		symbol (tuple): tupla con la información ya almacenada de BBDD.
+
+	Returns:
+		[dict]: Diccionario con los mismos datos organizados por key.
+	"""
 	d = {}
 	d["symbol"] = symbol[0]
 	d["minNotional"] = symbol[1]
@@ -44,55 +67,6 @@ def parseSymbol(symbol):
 	d["dbCalculator"] = symbol[11]
 	d["MACDentry"] = symbol[12]
 	return d
-
-def parseDataRow(tupleRow):
-	dataRow = {}
-	dataRow["openTime"] = tupleRow[0]
-	dataRow["symbol"] = tupleRow[1]
-	dataRow["open"] = Decimal(tupleRow[2])
-	dataRow["high"] = Decimal(tupleRow[3])
-	dataRow["low"] = Decimal(tupleRow[4])
-	dataRow["close"] = Decimal(tupleRow[5])
-	if tupleRow[6] == None:
-		dataRow["ema12"] = None
-	else:
-		dataRow["ema12"] = Decimal(tupleRow[6])
-	if tupleRow[7] == None:
-		dataRow["ema26"] = None
-	else:
-		dataRow["ema26"] = Decimal(tupleRow[7])
-	if tupleRow[8] == None:
-		dataRow["macd"] = None
-	else:
-		dataRow["macd"] = Decimal(tupleRow[8])
-	if tupleRow[9] == None:
-		dataRow["sig9"] = None
-	else:
-		dataRow["sig9"] = Decimal(tupleRow[9])
-	if tupleRow[10] == None:
-		dataRow["diff"] = None
-	else:
-		dataRow["diff"] = Decimal(tupleRow[10])
-	return dataRow
-
-def sqlToDataframe(sqlCursor):
-	data = {
-		"openTime": [],
-		"symbol": [],
-		"open" : [],
-		"high" : [],
-		"low" : [],
-		"close" : [],
-		"macd" : [],
-		"sig" : [],
-		"histogram": []
-	}
-	for timepoint in sqlCursor:
-		try:
-			pass
-		except:
-			pass
-	return pd.DataFrame(data)
 
 class DB:
 	def __init__(self):
@@ -140,59 +114,6 @@ class DB:
 			cur.execute(query)
 			conn.commit()
 		conn.close()
-	'''def _insertSymbol(self, data):
-		"""SE ROMPE TODO!!!! Hay que refactorizar esta funcion para no sufrir cada vez que se modifique el scheme.
-
-		Args:
-			data ([type]): [description]
-		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		minNotional = "-"
-		minQty = "-"
-		stepSize = "-"
-		precision = "-"
-		acierto = "0"
-		total = "0"
-		percent = "0"
-		s1 = "0"
-		m1 = "0"
-		for filt in data["filters"]:
-			if filt["filterType"] == "MIN_NOTIONAL":
-				minNotional = filt["minNotional"]
-			elif filt["filterType"] == "LOT_SIZE":
-				minQty = filt["minQty"]
-				stepSize = filt["stepSize"]
-		try:
-			precision = data["baseAssetPrecision"]
-		except KeyError:
-			pass
-		queryARR = ["'"+data["symbol"]+"'",
-					"'"+minNotional+"'",
-					"'"+minQty+"'",
-					"'"+stepSize+"'",
-					"'"+str(precision)+"'",
-					"'"+acierto+"'",
-					"'"+total+"'",
-					"'"+percent+"'",
-					"'"+s1+"'",
-					"'"+m1+"'",
-					"NULL","NULL"]
-		querySTR = ",".join(queryARR)
-		st = f"INSERT INTO symbols VALUES({querySTR})"
-		print(st)
-		cur.execute(st)
-		conn.commit()
-		conn.close()'''
 	def _insertSymbol(self, data):
 		"""SE ROMPE TODO!!!! Hay que refactorizar esta funcion para no sufrir cada vez que se modifique el scheme.
 			Args:
