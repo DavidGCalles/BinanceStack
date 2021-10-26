@@ -69,13 +69,31 @@ def parseSymbol(symbol):
 	return d
 
 class DB:
+	"""Clase que engloba las conexiones, variables y funciones relacionadas con la base de datos.
+	"""
 	def __init__(self):
+		"""Inicialización. No requiere ningun argumento porque los datos son hardcoded.
+		"""
 		self.user = f"binance"
 		self.password = "binance"
 		self.host = "mariadb"
 		self.port = 3306
 		self.database = "binance"
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), limit = 100):
+		#! Determina las cuestiones horarias (UTC) del funcionamiento y explicalas!!!!
+		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
+		Recibe una fecha de entrada y salida para saber los datos requeridos. También implementa
+		un mecanismo de bufer circular, donde "limit" es el numero de puntos de datos relacionados
+		que se almacenarán en total, eliminando los mas antiguos según entran nuevos (FIFO).
+
+		Args:
+			client (binance.Client): Instancia de cliente de binance para hacer las peticiones a la api.
+			symbol (string): Par de monedas requerido.
+			interval (string): Cadena que, en este momento solo puede ser  "4h" o "1d". Esta muy enlazado a las tablas de la BBDD
+			start (datetime.datetime): Fecha de comienzo 
+			end (datetime.datetime, optional): Fecha de final. Defaults to datetime.now().
+			limit (int, optional): Limite de puntos de datos en los que el bufer actua. Defaults to 100.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -115,9 +133,15 @@ class DB:
 			conn.commit()
 		conn.close()
 	def _insertSymbol(self, data):
-		"""SE ROMPE TODO!!!! Hay que refactorizar esta funcion para no sufrir cada vez que se modifique el scheme.
-			Args:
-			data ([type]): [description]
+		"""Funcion para insertar los simbolos y sus datos en la tabla Symbols.
+
+		He tenido que prescindir de actualizar el valor "precision" porque me daba errores SQL que no
+		podia solucionar.
+		#? Trabajar en esto. Algun dia tendremos que saber porque sucede o necesitaremos ese valor. SEGURO.
+
+		Args:
+			data (dict): Diccionario directo desde la API de binance. Esta funcion es llamada por cada par
+			en los datos resultantes del exchange. 
 		"""
 		try:
 			conn = mariadb.connect(
