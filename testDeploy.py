@@ -65,6 +65,7 @@ class dbMiner(Worker):
 			interval (STR): cadena equivalente a self.client.KLINE_INTERVAL_nX. Se utiliza para definir la tabla de
 				tiempos que usar, el timedelta adecuado para las solicitudes.
 		"""
+		print(f"Comprobando datos de: {symbol}")
 		if interval == "1d":
 			deltaInterval = self.interval1d
 		elif interval == "4h":
@@ -73,9 +74,9 @@ class dbMiner(Worker):
 		dateEnd = datetime.now()
 		if len(lastPoint) == 0:
 			##Si el conteo de la tabla y simbolo concreto da como vacio, intentar obtener los maximos puntos necesarios obteniendo la fecha de inicio (dateStartObj)
-			print(f"Tabla {interval}, {symbol}, vacia. Descargando datos completos.")
 			dateStartObj = dateEnd-(deltaInterval*self.pointsNeeded)
 			db.insertData(self.client, symbol, interval, str(dateStartObj), end = str(dateEnd), limit=self.pointsNeeded)
+			print(f"Tabla {interval}, vacia. Descargando datos completos desde {dateStartObj}")
 		else:
 			##Si la tabla tiene datos ya, seguir capturando a partir de esa fecha.
 			print(f"Tabla {interval}, {symbol}, contiene datos. Comprobando tiempo {lastPoint[0]}")
@@ -129,15 +130,33 @@ class dbCalculator(Worker):
 class MACDentry(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
-		self.updateTime = timedelta(hours=1)
+		self.updateTime = timedelta(seconds=15)
 	def startWork(self):
 		self.lastCheck = db.getOlderServe(self.work)
 		while True:
 			if self._internalTick() == True:
-				pairs = db.servePairs(self.work)
+				pairs = db.servePairs(self.work, limit=100)
 				for pair in pairs:
-					price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
-					print(f'{pair["symbol"]}: {price}')
+					df4h = db.getDataFrame(pair["symbol"], "4h")
+					if df4h.empty == False:
+						last4h = df4h["histogram"].iat[-1]
+						prelast4h = df4h["histogram"].iat[-2]
+						if last4h is not None and prelast4h is not None: 
+							if last4h > prelast4h:
+								if last4h > 0:
+									#print(Decimal(df4h["histogram"].iat[-1]))
+									price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
+									print(f'{pair["symbol"]}: {price}')
+									print(df4h["openTime"].iat[-1])
+									print("---> Abriendo Trade!")
+								else:
+									pass
+							else:
+								pass
+						else:
+							print("Cant Check histogram, NoneValue")
+					else:
+						print("Dataframe empty")
 				self.lastCheck = db.getOlderServe(self.work)
 
 if __name__ == "__main__":

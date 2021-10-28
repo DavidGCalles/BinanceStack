@@ -47,12 +47,12 @@ services:
     command: testDeploy.py david dbCalculator
     depends_on: 
       - mariadb
-  #macdentry:
-    #build: 
-      #dockerfile: worker.dockerfile
-    #command: testDeploy.py david MACDentry
-    #depends_on: 
-      #- mariadb
+  macdentry:
+    build: 
+      dockerfile: worker.dockerfile
+    command: testDeploy.py david MACDentry
+    depends_on: 
+      - mariadb
 volumes:
   grafanaConf:
   dbData:
