@@ -21,14 +21,16 @@ def test():
 	a.updateTime = timedelta(minutes=1)
 	while True:
 		a._internalTick()
+
 class Worker:
 	def __init__(self, user, workType):
-		#self.API = db.getAPI(user)
+		self.API = db.getAPI(user)
 		self.work = workType
-		#self.client = Client(self.API[0], self.API[1])
+		self.client = Client(self.API[0], self.API[1])
 		self.updateTime = timedelta(hours=2)
 		self.lastCheck = None
 	def _internalTick(self):
+		#! Hay un error con el timer. No se si está en esta funcion O en la propia funcion dbMiner y su config.
 		now = datetime.now()
 		#print(f"lastCheck: {self.lastCheck}")
 		#print(f"now: {now}")
@@ -85,6 +87,10 @@ class dbMiner(Worker):
 				print(f"Tabla {interval}, {symbol}, obteniendo ultimos puntos")
 				db.insertData(self.client,symbol, interval, str(lastPoint[0]+deltaInterval), end=str(dateEnd), limit=self.pointsNeeded)
 	def startWork(self):
+		#! Estamos buscando el problema de updating de esta funcion.
+		#? Posible causa 1) Configuracion de updateTime con servePairs de resultado inesperado.
+		#? Posible causa 2) Timeaware vs NoAware Datetimes.
+		#? Posible causa 3) Ninguna de las anteriores.
 		self.lastCheck = db.getOlderServe(self.work)
 		print("Starting Work")
 		print(f"lastCheck fetched from DB: {self.lastCheck}")
