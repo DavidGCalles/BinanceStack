@@ -54,6 +54,7 @@ class dbWorker(Worker):
 class dbMiner(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
+		self.updateTime = timedelta(minutes=1)
 		self.pointsNeeded = 54
 		self.interval4h = timedelta(hours=4)
 		self.interval1d = timedelta(days=1)
@@ -89,14 +90,13 @@ class dbMiner(Worker):
 	def startWork(self):
 		#! Estamos buscando el problema de updating de esta funcion.
 		#? Posible causa 1) Configuracion de updateTime con servePairs de resultado inesperado.
-		#? Posible causa 2) Timeaware vs NoAware Datetimes.
-		#? Posible causa 3) Ninguna de las anteriores.
+		#! Posible causa 2) Timeaware vs NoAware Datetimes.
 		self.lastCheck = db.getOlderServe(self.work)
 		print("Starting Work")
 		print(f"lastCheck fetched from DB: {self.lastCheck}")
 		while True:
 			if self._internalTick() == True:
-				pairs = db.servePairs(self.work, limit= 1000)
+				pairs = db.servePairs(self.work, limit= 100)
 				for pair in pairs:
 					print(f'Checking {pair["symbol"]} in db')
 					self._checkData(pair["symbol"], "4h")
