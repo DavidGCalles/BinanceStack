@@ -17,7 +17,10 @@ def test_general():
 	print("|TESTING CONTAINER ENVIRONMENT")
 
 def test():
-	print("TESTER FUNCTION")
+	a = Worker("test", "test")
+	a.updateTime = timedelta(minutes=1)
+	while True:
+		a._internalTick()
 
 class Worker:
 	def __init__(self, user, workType):
@@ -27,15 +30,17 @@ class Worker:
 		self.updateTime = timedelta(hours=2)
 		self.lastCheck = None
 	def _internalTick(self):
+		#! Hay un error con el timer. Estoy comparando datetimes en UTC con LocalTime
+		#TODO Implementar AQUI timezone awarenes. No debería ser muy complicado. Recogemos UTC y convertimos a local antes de la comparacion.
 		now = datetime.now()
 		#print(f"lastCheck: {self.lastCheck}")
 		#print(f"now: {now}")
 		if self.lastCheck == None or now >= self.lastCheck + self.updateTime:
-			#print(f"Próxima comprobación: {now+self.updateTime}")
+			print(f"internalTick: True | nextCheck: {now+self.updateTime}")
 			self.lastCheck = now
 			return True
 		else:
-			#print(f"nextCheck: {self.lastCheck + self.updateTime}")
+			#print(f"Tick: False | nextCheck: {self.lastCheck + self.updateTime}")
 			return False
 
 class dbWorker(Worker):
@@ -50,6 +55,7 @@ class dbWorker(Worker):
 class dbMiner(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
+		self.updateTime = timedelta(minutes=1)
 		self.pointsNeeded = 54
 		self.interval4h = timedelta(hours=4)
 		self.interval1d = timedelta(days=1)
@@ -85,9 +91,11 @@ class dbMiner(Worker):
 				db.insertData(self.client,symbol, interval, str(lastPoint[0]+deltaInterval), end=str(dateEnd), limit=self.pointsNeeded)
 	def startWork(self):
 		self.lastCheck = db.getOlderServe(self.work)
+		print("Starting Work")
+		print(f"lastCheck fetched from DB: {self.lastCheck}")
 		while True:
 			if self._internalTick() == True:
-				pairs = db.servePairs(self.work, limit= 1000)
+				pairs = db.servePairs(self.work, limit= 100)
 				for pair in pairs:
 					print(f'Checking {pair["symbol"]} in db')
 					self._checkData(pair["symbol"], "4h")
