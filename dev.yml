@@ -19,11 +19,11 @@ services:
       - 8070:8080
     depends_on: 
       - mariadb
-  #testdataframe:
-    #build:
-      #dockerfile: worker.dockerfile
-    #command: testDeploy.py test
-    #depends_on:
-      #- mariadb
+  macdentry:
+    build:
+      dockerfile: worker.dockerfile
+    command: testDeploy.py david MACDentry
+    depends_on:
+      - mariadb
 volumes:
   dbDataDEV:
