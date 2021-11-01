@@ -37,6 +37,7 @@ class Worker:
 		now = datetime.now()
 		#print(f"lastCheck: {self.lastCheck}")
 		#print(f"now: {now}")
+		conv_lastCheck = utc_to_local(self.lastCheck)
 		if self.lastCheck == None or now >= self.lastCheck + self.updateTime:
 			print(f"internalTick: True | nextCheck: {now+self.updateTime}")
 			self.lastCheck = now
@@ -173,6 +174,7 @@ if __name__ == "__main__":
 	#test_general()
 	##argv1 = USER/test
 	##argv2 = workerType/testType
+	print(datetime.now())
 	try:
 		if argv[1] == "test":
 			test()
