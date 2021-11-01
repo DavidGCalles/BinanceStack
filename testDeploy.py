@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from binance.client import Client
-from dbOPS import DB, utc_to_local
+from dbOPS import DB
 from TA import Indicators
 from sys import argv
 import pandas as pd
