@@ -8,9 +8,7 @@ from TA import Indicators
 from sys import argv
 import pandas as pd
 import pandas_ta as ta
-import pytz
 
-local_tz = pytz.timezone("Europe/Madrid")
 workerTypes = ["test","dbWorker", "dbMiner", "dbCalculator", "MACDentry"]
 
 db = DB()
@@ -32,8 +30,8 @@ class Worker:
 		self.updateTime = timedelta(hours=2)
 		self.lastCheck = None
 	def _internalTick(self):
-		#! Hay un error con el timer. Estoy comparando datetimes en UTC con LocalTime
-		#TODO Implementar AQUI timezone awarenes. No debería ser muy complicado. Recogemos UTC y convertimos a local antes de la comparacion.
+		#? No parece necesario implementar time awarenes. Los contenedores funcionan por defecto en UTC, asi que solo tengo que usar la conversion para
+		#? propositos de display.
 		now = datetime.now()
 		#print(f"lastCheck: {self.lastCheck}")
 		#print(f"now: {now}")
