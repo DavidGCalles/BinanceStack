@@ -3,7 +3,7 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from binance.client import Client
-from dbOPS import DB
+from dbOPS import DB, utc_to_local
 from TA import Indicators
 from sys import argv
 import pandas as pd
@@ -30,11 +30,12 @@ class Worker:
 		self.updateTime = timedelta(hours=2)
 		self.lastCheck = None
 	def _internalTick(self):
-		#! Hay un error con el timer. Estoy comparando datetimes en UTC con LocalTime
-		#TODO Implementar AQUI timezone awarenes. No debería ser muy complicado. Recogemos UTC y convertimos a local antes de la comparacion.
+		#? No parece necesario implementar time awarenes. Los contenedores funcionan por defecto en UTC, asi que solo tengo que usar la conversion para
+		#? propositos de display.
 		now = datetime.now()
 		#print(f"lastCheck: {self.lastCheck}")
 		#print(f"now: {now}")
+		conv_lastCheck = utc_to_local(self.lastCheck)
 		if self.lastCheck == None or now >= self.lastCheck + self.updateTime:
 			print(f"internalTick: True | nextCheck: {now+self.updateTime}")
 			self.lastCheck = now
@@ -171,6 +172,7 @@ if __name__ == "__main__":
 	#test_general()
 	##argv1 = USER/test
 	##argv2 = workerType/testType
+	print(datetime.now())
 	try:
 		if argv[1] == "test":
 			test()
