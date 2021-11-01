@@ -3,12 +3,14 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from binance.client import Client
-from dbOPS import DB
+from dbOPS import DB, utc_to_local
 from TA import Indicators
 from sys import argv
 import pandas as pd
 import pandas_ta as ta
+import pytz
 
+local_tz = pytz.timezone("Europe/Madrid")
 workerTypes = ["test","dbWorker", "dbMiner", "dbCalculator", "MACDentry"]
 
 db = DB()
