@@ -83,19 +83,6 @@ def parseSQLtoDict(fieldNames, responseTuple):
 		d[val] = fieldNames[ind]
 	return d
 
-def utc_to_local(utc_dt):
-	"""Funcion que convierte un datetime en UTC a local.
-	Robado sin verguenza alguna de:
-	https://izziswift.com/convert-a-python-utc-datetime-to-a-local-datetime-using-only-python-standard-library/#:~:text=Solution%201%3A%20In%20Python%203.3%2B%3A%20from%20datetime%20import,def%20utc_to_local%20%28utc_dt%29%3A%20%20return%20utc_dt.replace%20%28tzinfo%3Dtimezone.utc%29.astimezone%20%28tz%3DNone%29
-	Args:
-		utc_dt (datetime): Datetime en utc
-
-	Returns:
-		datetime: datetime local correspondiente al punto UTC
-	"""
-	local_dt = utc_dt.replace(tzinfo=pytz.utc).astimezone(local_tz)
-	return local_dt
-
 class DB:
 	"""Clase que engloba las conexiones, variables y funciones relacionadas con la base de datos.
 	"""
