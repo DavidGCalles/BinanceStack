@@ -35,7 +35,6 @@ class Worker:
 		now = datetime.now()
 		#print(f"lastCheck: {self.lastCheck}")
 		#print(f"now: {now}")
-		conv_lastCheck = utc_to_local(self.lastCheck)
 		if self.lastCheck == None or now >= self.lastCheck + self.updateTime:
 			print(f"internalTick: True | nextCheck: {now+self.updateTime}")
 			self.lastCheck = now
@@ -96,7 +95,7 @@ class dbMiner(Worker):
 		print(f"lastCheck fetched from DB: {self.lastCheck}")
 		while True:
 			if self._internalTick() == True:
-				pairs = db.servePairs(self.work, limit= 100)
+				pairs = db.servePairs(self.work, limit= 50)
 				for pair in pairs:
 					print(f'Checking {pair["symbol"]} in db')
 					self._checkData(pair["symbol"], "4h")
@@ -106,7 +105,7 @@ class dbMiner(Worker):
 class dbCalculator(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
-		self.updateTime = timedelta(minutes=2)
+		self.updateTime = timedelta(minutes=1)
 	def _calculate(self, symbol, interval):
 		print(f'Calculating data from {symbol} in db at interval {interval}')
 		df = db.getDataFrame(symbol, interval)
