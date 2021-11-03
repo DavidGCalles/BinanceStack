@@ -53,7 +53,7 @@ CREATE TABLE IF NOT EXISTS `traded` (
   `exit` varchar(50) NOT NULL,
   `qty` decimal(40,8) NOT NULL,
   `price` decimal(40,8) NOT NULL,
-  `baseQty` decimal(40,8) NOT NULL
+  `baseQty` decimal(40,8) NOT NULL,
   `closeTime` datetime NOT NULL,
   `sellPrice` decimal(40,8) NOT NULL,
   `baseProfit` decimal(40,8) NOT NULL) ENGINE='InnoDB';
