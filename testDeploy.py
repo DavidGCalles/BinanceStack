@@ -139,6 +139,14 @@ class MACDentry(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
 		self.updateTime = timedelta(seconds=15)
+		self.maxOld = timedelta(hours=4)
+	def _checkDate(self, df):
+		"""Comprueba que la fecha no es más lejana de self.maxOld
+
+		Args:
+			df ([type]): [description]
+		"""
+		pass
 	def startWork(self):
 		self.lastCheck = db.getOlderServe(self.work)
 		while True:

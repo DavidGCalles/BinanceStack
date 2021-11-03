@@ -1,4 +1,59 @@
-CREATE TABLE IF NOT EXISTS `binance`.`users` ( `name` VARCHAR(255) NOT NULL , `key` VARCHAR(255) NOT NULL , `secret` VARCHAR(255) NOT NULL , `mail` VARCHAR(255) NOT NULL ) ENGINE = InnoDB;
-CREATE TABLE IF NOT EXISTS `symbols` ( `symbol` VARCHAR(50) NOT NULL , `minNotional` DECIMAL(40,8) NOT NULL DEFAULT '0' , `minQty` DECIMAL(40,8) NOT NULL DEFAULT '0' , `stepSize` DECIMAL(40,8) NOT NULL DEFAULT '0' , `precision` INT(2) NOT NULL DEFAULT '0' , `acierto` INT(5) NOT NULL DEFAULT '0' , `total` INT(5) NOT NULL DEFAULT '0' , `percent` INT(3) NOT NULL DEFAULT '0' , `1S` BOOLEAN NULL DEFAULT NULL , `1M` BOOLEAN NULL DEFAULT NULL , `dbMiner` DATETIME NULL DEFAULT NULL , `dbCalculator` DATETIME NULL DEFAULT NULL, `MACDentry` DATETIME NULL DEFAULT NULL ) ENGINE = InnoDB;
-CREATE TABLE IF NOT EXISTS `data_4h` ( `openTime` DATETIME NOT NULL , `symbol` VARCHAR(50) NOT NULL , `open` DECIMAL(40,8) NOT NULL , `high` DECIMAL(40,8) NOT NULL , `low` DECIMAL(40,8) NOT NULL , `close` DECIMAL(40,8) NOT NULL , `macd` DECIMAL(40,8) NULL , `sig` DECIMAL(40,8) NULL , `histogram` DECIMAL(40,8) NULL ) ENGINE = InnoDB;
-CREATE TABLE IF NOT EXISTS `data_1d` ( `openTime` DATETIME NOT NULL , `symbol` VARCHAR(50) NOT NULL , `open` DECIMAL(40,8) NOT NULL , `high` DECIMAL(40,8) NOT NULL , `low` DECIMAL(40,8) NOT NULL , `close` DECIMAL(40,8) NOT NULL , `macd` DECIMAL(40,8) NULL , `sig` DECIMAL(40,8) NULL , `histogram` DECIMAL(40,8) NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `binance`.`users` (
+  `name` VARCHAR(255) NOT NULL ,
+  `key` VARCHAR(255) NOT NULL ,
+  `secret` VARCHAR(255) NOT NULL ,
+  `mail` VARCHAR(255) NOT NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `symbols` (
+  `symbol` VARCHAR(50) NOT NULL ,
+  `minNotional` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
+  `minQty` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
+  `stepSize` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
+  `precision` INT(2) NOT NULL DEFAULT '0' ,
+  `acierto` INT(5) NOT NULL DEFAULT '0' ,
+  `total` INT(5) NOT NULL DEFAULT '0' ,
+  `percent` INT(3) NOT NULL DEFAULT '0' ,
+  `1S` BOOLEAN NULL DEFAULT NULL ,
+  `1M` BOOLEAN NULL DEFAULT NULL ,
+  `dbMiner` DATETIME NULL DEFAULT NULL ,
+  `dbCalculator` DATETIME NULL DEFAULT NULL,
+  `MACDentry` DATETIME NULL DEFAULT NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `data_4h` (
+  `openTime` DATETIME NOT NULL ,
+  `symbol` VARCHAR(50) NOT NULL ,
+  `open` DECIMAL(40,8) NOT NULL ,
+  `high` DECIMAL(40,8) NOT NULL ,
+  `low` DECIMAL(40,8) NOT NULL ,
+  `close` DECIMAL(40,8) NOT NULL ,
+  `macd` DECIMAL(40,8) NULL ,
+  `sig` DECIMAL(40,8) NULL ,
+  `histogram` DECIMAL(40,8) NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `data_1d` (
+  `openTime` DATETIME NOT NULL ,
+  `symbol` VARCHAR(50) NOT NULL ,
+  `open` DECIMAL(40,8) NOT NULL ,
+  `high` DECIMAL(40,8) NOT NULL ,
+  `low` DECIMAL(40,8) NOT NULL ,
+  `close` DECIMAL(40,8) NOT NULL ,
+  `macd` DECIMAL(40,8) NULL ,
+  `sig` DECIMAL(40,8) NULL ,
+  `histogram` DECIMAL(40,8) NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `trading` (
+  `openTime` datetime NOT NULL,
+  `symbol` varchar(50) NOT NULL,
+  `entry` varchar(50) NOT NULL,
+  `exit` varchar(50) NOT NULL,
+  `qty` decimal(40,8) NOT NULL,
+  `price` decimal(40,8) NOT NULL,
+  `baseQty` decimal(40,8) NOT NULL,
+  `lastCheck` datetime NULL DEFAULT NULL) ENGINE='InnoDB';
+CREATE TABLE IF NOT EXISTS `traded` (
+  `openTime` datetime NOT NULL,
+  `symbol` varchar(50) NOT NULL,
+  `entry` varchar(50) NOT NULL,
+  `exit` varchar(50) NOT NULL,
+  `qty` decimal(40,8) NOT NULL,
+  `price` decimal(40,8) NOT NULL,
+  `baseQty` decimal(40,8) NOT NULL,
+  `closeTime` datetime NOT NULL,
+  `sellPrice` decimal(40,8) NOT NULL,
+  `baseProfit` decimal(40,8) NOT NULL) ENGINE='InnoDB';
