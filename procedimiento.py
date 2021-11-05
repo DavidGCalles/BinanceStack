@@ -26,9 +26,9 @@ class MACDentry(Worker):
 		"""
 		pass
 	def startWork(self):
-		self.lastCheck = db.getOlderServe(self.work)
+		self.timer.updateLastCheck(db.getOlderServe(self.work))
 		while True:
-			if self._internalTick() == True:
+			if self.timer.tick() == True:
 				pairs = db.servePairs(self.work, limit=100)
 				for pair in pairs:
 					df4h = db.getDataFrame(pair["symbol"], "4h")
@@ -51,7 +51,7 @@ class MACDentry(Worker):
 							print("Cant Check histogram, NoneValue")
 					else:
 						print("Dataframe empty")
-				self.lastCheck = db.getOlderServe(self.work)
+				self.timer.updateLastCheck(db.getOlderServe(self.work))
 
 if __name__ == "__main__":
 	##argv1 = USER/test
