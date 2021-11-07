@@ -57,3 +57,7 @@ CREATE TABLE IF NOT EXISTS `traded` (
   `closeTime` datetime NOT NULL,
   `sellPrice` decimal(40,8) NOT NULL,
   `baseProfit` decimal(40,8) NOT NULL) ENGINE='InnoDB';
+CREATE TABLE IF NOT EXISTS `config` (
+  `user` varchar(50) NOT NULL,
+  `key` VARCHAR(50) NOT NULL,
+  `value` VARCHAR(50) NOT NULL) ENGINE = 'InnoDB';

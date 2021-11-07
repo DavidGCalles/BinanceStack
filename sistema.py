@@ -48,6 +48,7 @@ class Worker:
 		self.API = db.getAPI(user)
 		self.work = workType
 		self.client = Client(self.API[0], self.API[1])
+		self.config = self.API[2]
 		self.timer = Timer()
 
 class dbWorker(Worker):

@@ -421,13 +421,14 @@ class DB:
 		conn.close()
 	def getAPI(self, user):
 		"""Obtiene la clave de api y secreto de un usuario desde la tabla users.
+		Además, incluye las configuraciones relacionadas con ese usuario.
 		#! Atencion, altamente inseguro. Simplemente queria que funcionase.
 
 		Args:
 			user (string): Nombre del usuario.
 
 		Returns:
-			[list]: Lista compuesta de [API_KEY, API_SECRET] en cadenas.
+			[list]: Lista compuesta de [API_KEY, API_SECRET, CONFIG] en cadenas.
 		"""
 		try:
 			conn = mariadb.connect(
@@ -444,7 +445,16 @@ class DB:
 		apiKEYS=[]
 		for idAPI in cur:
 			apiKEYS.append(idAPI[1])
-			apiKEYS.append(idAPI[2])		
+			apiKEYS.append(idAPI[2])
+		st = f"SELECT * FROM config WHERE user='{user}'"
+		cur.execute(st)
+		configDict = {"user":"", "key":"", "value":""}
+		for configSet in cur:
+			configDict["user"] = configSet[0]
+			configDict["key"] = configSet[1]
+			configDict["value"] = configSet[2]
+		apiKEYS.append(configDict)
+		conn.close()
 		return apiKEYS
 	def getOlderServe(self, serveType):
 		"""Recupera la fecha más antigua de servicio de un par en la tabla symbols.
@@ -534,6 +544,7 @@ class DB:
 		cur = conn.cursor()
 		query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
 		cur.execute(query)
+		conn.close()
 
 if __name__ == "__main__":
 	db1 = DB()
