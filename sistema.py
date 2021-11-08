@@ -46,14 +46,22 @@ class Timer:
 class Worker:
 	def __init__(self, user, workType):
 		self.API = db.getAPI(user)
+		self.user = user
 		self.work = workType
 		self.client = Client(self.API[0], self.API[1])
-		self.config = self.API[2]
+		self.config = db.getConfig(user)
 		self.timer = Timer()
 
 class dbWorker(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
+		self.requiried = ["dbWorker_interval"]
+		print(self.config)
+		try:
+			self.interval = timedelta(minutes=int(self.config[self.requiried[0]]))
+		except KeyError:
+			self.interval = timedelta(minutes=120)
+			db.setConfig(self.requiried, str(120))
 	def startWork(self):
 		while True:
 			if self.timer.tick() == True:

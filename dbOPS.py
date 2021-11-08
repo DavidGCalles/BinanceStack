@@ -446,14 +446,6 @@ class DB:
 		for idAPI in cur:
 			apiKEYS.append(idAPI[1])
 			apiKEYS.append(idAPI[2])
-		st = f"SELECT * FROM config WHERE user='{user}'"
-		cur.execute(st)
-		configDict = {"user":"", "key":"", "value":""}
-		for configSet in cur:
-			configDict["user"] = configSet[0]
-			configDict["key"] = configSet[1]
-			configDict["value"] = configSet[2]
-		apiKEYS.append(configDict)
 		conn.close()
 		return apiKEYS
 	def getOlderServe(self, serveType):
@@ -543,6 +535,38 @@ class DB:
 			print(f"Error connecting to MariaDB Platform: {e}")
 		cur = conn.cursor()
 		query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
+		cur.execute(query)
+		conn.close()
+	def getConfig(self, user):
+		try:
+			conn = mariadb.connect(
+				user=self.user,
+				password=self.password,
+				host=self.host,
+				port=self.port,
+				database=self.database)
+		except mariadb.Error as e:
+			print(f"Error connecting to MariaDB Platform: {e}")
+		cur = conn.cursor()
+		st = f"SELECT * FROM config WHERE user='{user}'"
+		cur.execute(st)
+		configDict = {}
+		for configSet in cur:
+			configDict[configSet[1]] = configSet[2]
+		return configDict
+	def setConfig(self, user, key, val):
+		try:
+			conn = mariadb.connect(
+				user=self.user,
+				password=self.password,
+				host=self.host,
+				port=self.port,
+				database=self.database
+				)
+		except mariadb.Error as e:
+			print(f"Error connecting to MariaDB Platform: {e}")
+		cur = conn.cursor()
+		query = f"INSERT INTO config (user, key, val) VALUES ('{user}','{key}','{val}')"
 		cur.execute(query)
 		conn.close()
 

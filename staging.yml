@@ -25,17 +25,17 @@ services:
     command: sistema.py david dbWorker
     depends_on:
       - mariadb
-  dbminer:
-    build:
-      dockerfile: worker.dockerfile
-    command: sistema.py david dbMiner
-    depends_on:
-      - mariadb
-  dbcalculator:
-    build: 
-      dockerfile: worker.dockerfile
-    command: sistema.py david dbCalculator
-    depends_on: 
-      - mariadb
+  #dbminer:
+    #build:
+      #dockerfile: worker.dockerfile
+    #command: sistema.py david dbMiner
+    #depends_on:
+      #- mariadb
+  #dbcalculator:
+    #build: 
+      #dockerfile: worker.dockerfile
+    #command: sistema.py david dbCalculator
+    #depends_on: 
+      #- mariadb
 volumes:
   dbDataDEV:

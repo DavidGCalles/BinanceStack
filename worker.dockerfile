@@ -8,7 +8,7 @@ RUN apt-get install python3-pip libmariadb-dev -y
 WORKDIR /var/www/html
 
 COPY . .
-RUN pip3 install --no-cache-dir -r requirements.txt
+RUN pip3 install -r requirements.txt
 #RUN pip3 install python-binance mariadb pandas pandas-ta
 
 ENTRYPOINT ["python3", "-u"]
