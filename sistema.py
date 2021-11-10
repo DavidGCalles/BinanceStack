@@ -13,7 +13,7 @@ workerTypes = ["dbWorker", "dbMiner", "dbCalculator"]
 db = DB()
 
 class Timer:
-	def __init__(self, updateTime = timedelta(hours=2)):
+	def __init__(self, updateTime = timedelta(minutes=5)):
 		self.updateTime = updateTime
 		self.lastCheck = None
 	def updateLastCheck(self, newCheck):
@@ -46,10 +46,34 @@ class Timer:
 class Worker:
 	def __init__(self, user, workType):
 		self.API = db.getAPI(user)
+		self.user = user
 		self.work = workType
 		self.client = Client(self.API[0], self.API[1])
-		self.config = self.API[2]
-		self.timer = Timer()
+		self.config = db.getConfig(user)
+		self.requiried = [f"{self.work}_configInterval", f"{self.work}_interval", f"{self.work}_batchSize"]
+		#Tantos bloques Try son para aislar cada configuracion. Si los uniese, la ausencia de una caracteristica haria que
+		# cada uno de los defaults se sobreescribiese.
+		try:
+			self.configInterval = Timer(updateTime = timedelta(minutes=int(self.config[self.requiried[0]])))
+		except KeyError:
+			self.configInterval= Timer(updateTime=timedelta(minutes=2))
+			db.setConfig(self.user, self.requiried[0], str(2))
+		try:
+			self.timer = Timer(updateTime = timedelta(minutes=int(self.config[self.requiried[1]])))
+		except KeyError:
+			self.timer = Timer()
+			db.setConfig(self.user, self.requiried[1], str(5))
+		try:
+			self.batchSize = int(self.config[self.requiried[2]])
+		except KeyError:
+			self.batchSize = 20
+			db.setConfig(self.user, self.requiried[2], str(20))
+	def refreshBasicConfigs(self):
+		print("Probing config in DB.")
+		self.config = db.getConfig(self.user)
+		self.configInterval.updateTime = timedelta(minutes=int(self.config[self.requiried[0]]))
+		self.timer.updateTime = timedelta(minutes=int(self.config[self.requiried[1]]))
+		self.batchSize = int(self.config[self.requiried[2]])
 
 class dbWorker(Worker):
 	def __init__(self, user, workType):
@@ -59,11 +83,11 @@ class dbWorker(Worker):
 			if self.timer.tick() == True:
 				print("Starting Task. Updating Symbol Database.")
 				db.updateSymbols(self.client)
-
+			if self.configInterval.tick() == True:
+				self.refreshBasicConfigs()
 class dbMiner(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
-		self.timer.updateTime = timedelta(minutes=3)
 		self.pointsNeeded = 54
 		self.interval4h = timedelta(hours=4)
 		self.interval1d = timedelta(days=1)
@@ -105,18 +129,20 @@ class dbMiner(Worker):
 			if self.timer.tick() == True:
 				print("Starting Task, Mining Data.")
 				print(f"Timer.lastCheck fetched from DB: {self.timer.lastCheck}")
-				pairs = db.servePairs(self.work, limit= 100)
+				pairs = db.servePairs(self.work, limit= self.batchSize)
 				for pair in pairs:
 					print(f"Checking {pair['symbol']}:")
 					print(f'---> Checking in db')
 					self._checkData(pair["symbol"], "4h")
 					self._checkData(pair["symbol"], "1d")
 				self.timer.updateLastCheck(db.getOlderServe(self.work))
+			if self.configInterval.tick() == True:
+				self.refreshBasicConfigs()
+
 
 class dbCalculator(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
-		self.timer.updateTime = timedelta(minutes=3)
 	def _calculate(self, symbol, interval):
 		print(f'Calculating data from {symbol} in db at interval {interval}')
 		df = db.getDataFrame(symbol, interval)
@@ -139,12 +165,14 @@ class dbCalculator(Worker):
 		#print(self.lastCheck)
 		while True:
 			if self.timer.tick() == True:
-				pairs = db.servePairs(self.work, limit=100)
+				pairs = db.servePairs(self.work, limit=self.batchSize)
 				#print(pairs)
 				for pair in pairs:
 					self._calculate(pair["symbol"], "4h")
 					self._calculate(pair["symbol"], "1d")
 				self.timer.updateLastCheck(db.getOlderServe(self.work))
+			if self.configInterval.tick() == True:
+				self.refreshBasicConfigs()
 
 if __name__ == "__main__":
 	##argv1 = USER/test

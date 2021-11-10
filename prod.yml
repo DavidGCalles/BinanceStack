@@ -32,21 +32,23 @@ services:
   dbworker:
     build:
       dockerfile: worker.dockerfile
-    command: testDeploy.py david dbWorker
+    command: sistema.py david dbWorker
     depends_on:
       - mariadb
   dbminer:
     build:
       dockerfile: worker.dockerfile
-    command: testDeploy.py david dbMiner
+    command: sistema.py david dbMiner
     depends_on:
       - mariadb
+      - dbworker
   dbcalculator:
     build: 
       dockerfile: worker.dockerfile
-    command: testDeploy.py david dbCalculator
+    command: sistema.py david dbCalculator
     depends_on: 
       - mariadb
+      - dbworker
 volumes:
   grafanaConf:
   dbData:
