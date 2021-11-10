@@ -67,13 +67,13 @@ class Worker:
 			self.batchSize = int(self.config[self.requiried[2]])
 		except KeyError:
 			self.batchSize = 20
-			db.setConfig(self.user, self.requiried[1], str(20))
-		def refreshBasicConfigs(self):
-			print("Probing config in DB.")
-			self.config = db.getConfig(self.user)
-			self.configInterval.updateTime = timedelta(minutes=int(self.config[self.requiried[0]]))
-			self.timer.updateTime = timedelta(minutes=int(self.config[self.requiried[1]]))
-			self.batchSize = int(self.config[self.requiried[2]])
+			db.setConfig(self.user, self.requiried[2], str(20))
+	def refreshBasicConfigs(self):
+		print("Probing config in DB.")
+		self.config = db.getConfig(self.user)
+		self.configInterval.updateTime = timedelta(minutes=int(self.config[self.requiried[0]]))
+		self.timer.updateTime = timedelta(minutes=int(self.config[self.requiried[1]]))
+		self.batchSize = int(self.config[self.requiried[2]])
 
 class dbWorker(Worker):
 	def __init__(self, user, workType):
