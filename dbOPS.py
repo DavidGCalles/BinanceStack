@@ -566,7 +566,7 @@ class DB:
 		except mariadb.Error as e:
 			print(f"Error connecting to MariaDB Platform: {e}")
 		cur = conn.cursor()
-		query = f"INSERT INTO config (user, key, val) VALUES ('{user}','{key}','{val}')"
+		query = f"INSERT INTO config (user, keyName, value) VALUES ('{user}','{key}','{val}')"
 		cur.execute(query)
 		conn.close()
 

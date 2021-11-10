@@ -8,7 +8,7 @@ CREATE TABLE IF NOT EXISTS `symbols` (
   `minNotional` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
   `minQty` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
   `stepSize` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
-  `precision` INT(2) NOT NULL DEFAULT '0' ,
+  `precisionAsset` INT(2) NOT NULL DEFAULT '0' ,
   `acierto` INT(5) NOT NULL DEFAULT '0' ,
   `total` INT(5) NOT NULL DEFAULT '0' ,
   `percent` INT(3) NOT NULL DEFAULT '0' ,
@@ -59,5 +59,5 @@ CREATE TABLE IF NOT EXISTS `traded` (
   `baseProfit` decimal(40,8) NOT NULL) ENGINE='InnoDB';
 CREATE TABLE IF NOT EXISTS `config` (
   `user` varchar(50) NOT NULL,
-  `key` VARCHAR(50) NOT NULL,
+  `keyName` VARCHAR(50) NOT NULL,
   `value` VARCHAR(50) NOT NULL) ENGINE = 'InnoDB';

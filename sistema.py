@@ -61,7 +61,7 @@ class dbWorker(Worker):
 			self.interval = timedelta(minutes=int(self.config[self.requiried[0]]))
 		except KeyError:
 			self.interval = timedelta(minutes=120)
-			db.setConfig(self.requiried, str(120))
+			db.setConfig(self.user, self.requiried[0], str(120))
 	def startWork(self):
 		while True:
 			if self.timer.tick() == True:
