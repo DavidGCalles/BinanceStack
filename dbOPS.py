@@ -191,7 +191,7 @@ class DB:
 		querySTR = ",".join(queryARR)
 		#st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize, precision) VALUES ({querySTR});"
 		st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize) VALUES ('{data['symbol']}','{minNotional}','{minQty}','{stepSize}')"
-		print(st)
+		#print(st)
 		cur.execute(st)
 		conn.commit()
 		conn.close()
@@ -568,6 +568,7 @@ class DB:
 		cur = conn.cursor()
 		query = f"INSERT INTO config (user, keyName, value) VALUES ('{user}','{key}','{val}')"
 		cur.execute(query)
+		conn.commit()
 		conn.close()
 
 if __name__ == "__main__":

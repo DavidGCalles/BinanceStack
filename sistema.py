@@ -13,7 +13,7 @@ workerTypes = ["dbWorker", "dbMiner", "dbCalculator"]
 db = DB()
 
 class Timer:
-	def __init__(self, updateTime = timedelta(hours=2)):
+	def __init__(self, updateTime = timedelta(minutes=5)):
 		self.updateTime = updateTime
 		self.lastCheck = None
 	def updateLastCheck(self, newCheck):
@@ -50,18 +50,19 @@ class Worker:
 		self.work = workType
 		self.client = Client(self.API[0], self.API[1])
 		self.config = db.getConfig(user)
-		self.timer = Timer()
+		self.requiried = [f"{self.work}_configInterval", f"{self.work}_interval"]
+		try:
+			self.configInterval = Timer(updateTime = timedelta(minutes=int(self.config[self.requiried[0]])))
+			self.timer = Timer(updateTime = timedelta(minutes=int(self.config[self.requiried[1]])))
+		except KeyError:
+			self.timer = Timer()
+			self.configInterval= Timer(updateTime=timedelta(minutes=2))
+			db.setConfig(self.user, self.requiried[0], str(2))
+			db.setConfig(self.user, self.requiried[1], str(5))
 
 class dbWorker(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
-		self.requiried = ["dbWorker_interval"]
-		print(self.config)
-		try:
-			self.interval = timedelta(minutes=int(self.config[self.requiried[0]]))
-		except KeyError:
-			self.interval = timedelta(minutes=120)
-			db.setConfig(self.user, self.requiried[0], str(120))
 	def startWork(self):
 		while True:
 			if self.timer.tick() == True:
