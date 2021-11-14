@@ -10,7 +10,18 @@ import pandas as pd
 import pandas_ta as ta
 
 workerTypes = ["dbWorker", "dbMiner", "dbCalculator"]
+realTrades = False
 db = DB()
+
+#! Esqueletos de funciones para esta rama.
+#! Se van a escribir fuera porque seran metodos de una superclase.
+def openTrade(tradeDict):
+	print("Opening trade")
+	print("Inserting in database.")
+def closeTrade(tradeDict):
+	print("Selling")
+	print("Moving from Trading to Traded in DB")
+#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 class Timer:
 	def __init__(self, updateTime = timedelta(minutes=5)):

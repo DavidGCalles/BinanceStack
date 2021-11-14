@@ -570,6 +570,13 @@ class DB:
 		cur.execute(query)
 		conn.commit()
 		conn.close()
+	#! Esqueleto de metodos necesarios para abrir y cerrar trades.False
+	#! Como siempre, este archivo se usa como interfaz para la DB.
+	def openTrade(self):
+		pass
+	def closeTrade(self):
+		pass
+	#! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 if __name__ == "__main__":
 	db1 = DB()
