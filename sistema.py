@@ -14,10 +14,26 @@ realTrades = False
 db = DB()
 
 #! Esqueletos de funciones para esta rama.
-#! Se van a escribir fuera porque seran metodos de una superclase.
+#! Se van a escribir fuera porque seran metodos de una superclase que aun no existe
 def openTrade(tradeDict):
-	print("Opening trade")
+	"""[summary]
+
+	Args:
+		tradeDict ([type]): openTime, symbol, entry, exit, qty, price, baseQty
+	"""
+	#TODO Aqui iria una comprobacion de los trades maximos, definidos en la configuracion WIDE
+	#TODO realTrades, hay que factorizarlo. Va a ser un bool en WIDE configuracion. En cuanto se implemente WIDE, al menos.
+	if realTrades == True:
+		print("Opening trade")
+		#TODO aqui iria la orden de compra, con una instancia de Binance.client. 
+	else:
+		print("Opening MOCK trade")
+	tradeDict["openTime"] = datetime.now()
+	tradeDict["qty"] = 20 #! Hardcoded porque si. Tengo que transferir bastantes funciones desde LEGACY para determinar esto.
+	## Faltan cosas por definir.
 	print("Inserting in database.")
+	## No funciona correctamente.
+	db.openTrade(tradeDict)
 def closeTrade(tradeDict):
 	print("Selling")
 	print("Moving from Trading to Traded in DB")
