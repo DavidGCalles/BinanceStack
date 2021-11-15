@@ -8,7 +8,7 @@ from dbOPS import DB
 from sys import argv
 import pandas as pd
 import pandas_ta as ta
-from sistema import Worker
+from sistema import Worker, openTrade
 
 workerTypes = ["MACDentry"]
 db = DB()
@@ -42,7 +42,12 @@ class MACDentry(Worker):
 									price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
 									print(f'{pair["symbol"]}: {price}')
 									print(df4h["openTime"].iat[-1])
-									print("---> Abriendo Trade!")
+									tradeDict = {"symbol": pair["symbol"],
+												"price": price,
+												"entry": "MACDentry",
+												"exit": "TSL"}
+									print(f"Abriendo trade con entrada MACD: {pair['symbol']}")
+									#openTrade(tradeDict)
 								else:
 									pass
 							else:

@@ -570,6 +570,27 @@ class DB:
 		cur.execute(query)
 		conn.commit()
 		conn.close()
+	#! Esqueleto de metodos necesarios para abrir y cerrar trades.False
+	#! Como siempre, este archivo se usa como interfaz para la DB.
+	def openTrade(self, tradeDict):
+		try:
+			conn = mariadb.connect(
+				user=self.user,
+				password=self.password,
+				host=self.host,
+				port=self.port,
+				database=self.database
+				)
+		except mariadb.Error as e:
+			print(f"Error connecting to MariaDB Platform: {e}")
+		cur = conn.cursor()
+		query = f"INSERT INTO trading (openTime, symbol, entry, exit, qty, price, baseQty) VALUES ('{tradeDict['openTime']}','{tradeDict['symbol']}','{tradeDict['entry']}','{tradeDict['exit']}','{tradeDict['qty']}','{tradeDict['price']}','{tradeDict['baseQty']}')"
+		cur.execute(query)
+		conn.commit()
+		conn.close()
+	def closeTrade(self):
+		pass
+	#! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 if __name__ == "__main__":
 	db1 = DB()
