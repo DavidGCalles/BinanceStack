@@ -11,7 +11,7 @@ services:
       MYSQL_USER: binance
       MYSQL_PASSWORD: binance
     volumes:
-      - dbDataDEV:/var/lib/mysql
+      - dbData:/var/lib/mysql
   adminer:
     image: adminer
     #restart: always
@@ -19,11 +19,14 @@ services:
       - 8070:8080
     depends_on: 
       - mariadb
-  macdentry:
+  dbworker:
     build:
-      dockerfile: worker.dockerfile
-    command: testDeploy.py david MACDentry
+      dockerfile: worker
+    command: ""
     depends_on:
       - mariadb
+    volumes:
+      - code:/var/www/html
 volumes:
-  dbDataDEV:
+  dbData:
+  code:
