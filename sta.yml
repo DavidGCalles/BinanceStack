@@ -11,7 +11,7 @@ services:
       MYSQL_USER: binance
       MYSQL_PASSWORD: binance
     volumes:
-      - dbDataDEV:/var/lib/mysql
+      - dbData:/var/lib/mysql
   prometheusagent:
     image: prom/mysqld-exporter
     ports:
@@ -35,36 +35,43 @@ services:
     ports:
       - 3080:3000
     volumes:
-      - grafanaConfDEV:/var/lib/grafana
+      - grafanaConf:/var/lib/grafana
     depends_on: 
       - mariadb
   adminer:
     image: adminer
     #restart: always
     ports:
-      - 8000:8080
+      - 8070:8080
     depends_on: 
       - mariadb
   dbworker:
     build:
-      dockerfile: worker.dockerfile
+      dockerfile: worker
     command: sistema.py david dbWorker
     depends_on:
       - mariadb
+    volumes:
+      - code:/var/www/html
   dbminer:
     build:
-      dockerfile: worker.dockerfile
+      dockerfile: worker
     command: sistema.py david dbMiner
     depends_on:
       - mariadb
       - dbworker
+    volumes:
+      - code:/var/www/html
   dbcalculator:
     build: 
-      dockerfile: worker.dockerfile
+      dockerfile: worker
     command: sistema.py david dbCalculator
     depends_on: 
       - mariadb
       - dbworker
+    volumes:
+      - code:/var/www/html
 volumes:
-  dbDataDEV:
-  grafanaConfDEV:
+  dbData:
+  grafanaConf:
+  code:
