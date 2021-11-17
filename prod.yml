@@ -30,25 +30,27 @@ services:
     depends_on: 
       - mariadb
   dbworker:
-    build:
-      dockerfile: worker.dockerfile
-    command: sistema.py david dbWorker
+    image: worker:0.0.2
+    #build:
+      #dockerfile: worker
+    command: code/sistema.py david dbWorker
     depends_on:
       - mariadb
   dbminer:
-    build:
-      dockerfile: worker.dockerfile
-    command: sistema.py david dbMiner
+    image: worker:0.0.2
+    #build:
+      #dockerfile: worker    
+    command: code/sistema.py david dbMiner
     depends_on:
       - mariadb
       - dbworker
-  dbcalculator:
-    build: 
-      dockerfile: worker.dockerfile
-    command: sistema.py david dbCalculator
-    depends_on: 
-      - mariadb
-      - dbworker
+#  dbcalculator:
+#    build: 
+#      dockerfile: worker
+#    command: code/sistema.py david dbCalculator
+#    depends_on: 
+#      - mariadb
+#      - dbworker
 volumes:
   grafanaConf:
   dbData:
