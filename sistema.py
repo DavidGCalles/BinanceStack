@@ -9,11 +9,6 @@ from sys import argv
 import pandas as pd
 import pandas_ta as ta
 
-import os
-
-print(os.getcwd())
-print(os.listdir())
-
 workerTypes = ["dbWorker", "dbMiner", "dbCalculator"]
 realTrades = False
 db = DB()

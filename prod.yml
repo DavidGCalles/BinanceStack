@@ -30,17 +30,17 @@ services:
     depends_on: 
       - mariadb
   dbworker:
-    image: worker:0.0.2
+    image: omadevs/worker:0.0.2
     #build:
       #dockerfile: worker
-    command: code/sistema.py david dbWorker
+    command: sistema.py david dbWorker
     depends_on:
       - mariadb
   dbminer:
-    image: worker:0.0.2
+    image: omadevs/worker:0.0.2
     #build:
       #dockerfile: worker    
-    command: code/sistema.py david dbMiner
+    command: sistema.py david dbMiner
     depends_on:
       - mariadb
       - dbworker
