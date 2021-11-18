@@ -4,7 +4,7 @@ services:
   mariadb:
     build:
       dockerfile: mariaImage
-    #restart: always
+    restart: always
     environment:
       MYSQL_ROOT_PASSWORD: example
       MYSQL_DATABASE: binance
@@ -24,22 +24,19 @@ services:
       - mariadb
   adminer:
     image: adminer
-    #restart: always
     ports:
       - 8080:8080
     depends_on: 
       - mariadb
   dbworker:
     image: omadevs/worker:0.0.2
-    #build:
-      #dockerfile: worker
+    restart: always
     command: sistema.py david dbWorker
     depends_on:
       - mariadb
   dbminer:
     image: omadevs/worker:0.0.2
-    #build:
-      #dockerfile: worker    
+    #restart: always
     command: sistema.py david dbMiner
     depends_on:
       - mariadb
