@@ -112,6 +112,7 @@ class dbWorker(Worker):
 				db.updateSymbols(self.client)
 			if self.configInterval.tick() == True:
 				self.refreshBasicConfigs()
+
 class dbMiner(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
@@ -165,7 +166,6 @@ class dbMiner(Worker):
 				self.timer.updateLastCheck(db.getOlderServe(self.work))
 			if self.configInterval.tick() == True:
 				self.refreshBasicConfigs()
-
 
 class dbCalculator(Worker):
 	def __init__(self, user, workType):
