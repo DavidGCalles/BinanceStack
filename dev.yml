@@ -12,22 +12,22 @@ services:
       MYSQL_PASSWORD: binance
     volumes:
       - dbData:/var/lib/mysql
-  prometheusagent:
-    image: prom/mysqld-exporter
-    ports:
-      - 9104:9104
-    depends_on:
-      - mariadb
-    environment:
-      DATA_SOURCE_NAME: binance:binance@(mariadb:3306)/binance
-  prometheus:
-    build:
-      dockerfile: prometheusImage.dockerfile
-    ports:
-      - 9090:9090
-    depends_on:
-      - mariadb
-      - prometheusagent
+#  prometheusagent:
+#    image: prom/mysqld-exporter
+#    ports:
+#      - 9104:9104
+#    depends_on:
+#      - mariadb
+#    environment:
+#      DATA_SOURCE_NAME: binance:binance@(mariadb:3306)/binance
+#  prometheus:
+#    build:
+#      dockerfile: prometheusImage.dockerfile
+#    ports:
+#      - 9090:9090
+#    depends_on:
+#      - mariadb
+#      - prometheusagent
   grafana:
     image: grafana/grafana
     environment:
@@ -47,30 +47,39 @@ services:
       - mariadb
   dbworker:
     build:
-      dockerfile: worker
+      dockerfile: workerDev
     command: code/sistema.py david dbWorker
     depends_on:
       - mariadb
     volumes:
       - code:/var/www/html
-#  dbminer:
-#   build:
-#      dockerfile: worker
-#    command: sistema.py david dbMiner
-#    depends_on:
-#      - mariadb
-#      - dbworker
-#    volumes:
-#      - code:/var/www/html
+  dbminer:
+    build:
+      dockerfile: workerDev
+    command: code/sistema.py david dbMiner
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
 #  dbcalculator:
 #    build: 
-#      dockerfile: worker
-#    command: sistema.py david dbCalculator
+#      dockerfile: workerDev
+#    command: code/sistema.py david dbCalculator
 #    depends_on: 
 #      - mariadb
 #      - dbworker
 #    volumes:
 #      - code:/var/www/html
+  macdentry:
+    build:
+      dockerfile: workerDev
+    command: code/procedimiento.py david MACDentry
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
 volumes:
   dbData:
   grafanaConf:

@@ -66,26 +66,7 @@ def checkRules(pair, ):
 
 #! Esqueletos de funciones para esta rama.
 #! Se van a escribir fuera porque seran metodos de una superclase que aun no existe
-def openTrade(tradeDict, config):
-	"""[summary]
 
-	Args:
-		tradeDict ([type]): openTime, symbol, entry, exit, qty, price, baseQty
-	"""
-	#TODO Aqui iria una comprobacion de los trades maximos, definidos en la configuracion WIDE
-	if config
-	#TODO realTrades, hay que factorizarlo. Va a ser un bool en WIDE configuracion. En cuanto se implemente WIDE, al menos.
-	if tradeType == True:
-		print("Opening trade")
-		#TODO aqui iria la orden de compra, con una instancia de Binance.client. 
-	else:
-		print("Opening MOCK trade")
-	tradeDict["openTime"] = datetime.now()
-	tradeDict["qty"] = 20 #! Hardcoded porque si. Tengo que transferir bastantes funciones desde LEGACY para determinar esto.
-	## Faltan cosas por definir.
-	print("Inserting in database.")
-	## No funciona correctamente.
-	db.openTrade(tradeDict)
 def closeTrade(tradeDict):
 	print("Selling")
 	print("Moving from Trading to Traded in DB")
@@ -130,7 +111,7 @@ class Worker:
 		self.client = Client(self.API[0], self.API[1])
 		self.config = db.getConfig(user)
 		self.requiried = [f"{self.work}_configInterval", f"{self.work}_interval", f"{self.work}_batchSize"]
-		self.wide = ["wide_realTrades", "wide_fiat", "wide_maxInv", "wide_maxTrades"]
+		self.wide = ["wide_realTrades", "wide_fiat", "wide_maxInv", "wide_maxTrades", "wide_baseCurrency"]
 		self._setupWorkConfig()
 		self._setupWideConfig()
 	def _setupWorkConfig(self):
@@ -163,21 +144,108 @@ class Worker:
 			self.fiat = "EUR"
 			db.setConfig(self.user, self.wide[1], "EUR")
 		try:
-			self.maxInv = self.config[self.wide[2]] #Maxima cantidad (en la FIAT seleccionada) de inversion por trade
+			self.maxInv = int(self.config[self.wide[2]]) #Maxima cantidad (en la FIAT seleccionada) de inversion por trade
 		except KeyError:
 			self.maxInv = 30
 			db.setConfig(self.user, self.wide[2], 30)
 		try:
-			self.maxTrades = self.config[self.wide[3]] #Trades maximos abiertos simultaneamente
+			self.maxTrades = int(self.config[self.wide[3]]) #Trades maximos abiertos simultaneamente
 		except KeyError:
 			self.maxTrades = 10 
 			db.setConfig(self.user, self.wide[3], 10)
+		try:
+			self.baseCurrency = self.config[self.wide[4]].split(",") #Pares permitidos para el trading.
+		except KeyError:
+			self.baseCurrency = ["BTC", "ETH", "BNB"]
+			db.setConfig(self.user, self.wide[4], str.join(",", self.baseCurrency))
+	def _getBaseCurrency(self, symbol):
+		"""Metodo de utilidad, exclusivamente utilizado en _checkRules.
+
+		Args:
+			symbol ([type]): [description]
+
+		Returns:
+			[type]: [description]
+		"""
+		for base in self.baseCurrency:
+			if symbol[len(base)-(len(base)*2):] == base:
+				return base
+		return None
+	def _checkRules(self, pair):
+		#! IMPORTANTE. Esta función hace uso de muchas opciones de configuracion WIDE
+		# Por todo esto y mucho más, solo se va a crear el esqueleto NO FUNCIONAL y comentado.
+		# Falta definir los argumentos de entrada
+		#? Estoy a punto de potar. La funcion esta muy bien escrita pero... no hay comentarios y se apoya en estructuras que ya no existen.
+		#? Todos los atributos de self provienen de un diccionario de la base de datos, tabla symbol. Sustituidos por el argumento "pair"
+		"""Comprueba las reglas de trading.
+		Las reglas de trading, segun las define la API de Binance, son las siguientes:
+			- filtro minNotional: el filtro minNotional se obtiene con (price*quantity)
+			- filtro marketLot: este filtro se supera con las siguientes condiciones
+				- quantity >= minQty
+				- quantity <= maxQty
+				- (quantity-minQty) % stepSize == 0
+		"""
+		act = Decimal(self.client.get_symbol_ticker(symbol=pair['symbol'])["price"]) # Precio actual del par.
+		base = self._getBaseCurrency(pair["symbol"])
+		if base != None:
+			if base != self.fiat:
+				print(f"eurP assign: {base}{self.fiat}")
+				eurP = Decimal(self.client.get_symbol_ticker(symbol=f"{base}{self.fiat}")["price"]) #Precio en fiat de la moneda base
+			else:
+				eurP = act
+		else:
+			print("No se puede obtener el precio base/fiat y calcular las reglas")
+			return [False, {}]
+		invBASE = self.maxInv/eurP ##Precio de inversion minima en moneda base
+		startQTY = invBASE/act ##CANTIDAD de moneda asset
+		notionalValue = startQTY*act
+		stepCheck = (startQTY-pair["minQty"])%pair["stepSize"]
+		if stepCheck != 0:
+			startQTY = startQTY-stepCheck
+			stepCheck = (startQTY-pair["minQty"])%pair["stepSize"]
+			notionalValue = startQTY*act
+			if stepCheck == 0 and notionalValue >= Decimal(pair["minNotional"]):
+				'''print("stepCheck PASSED. Reajustado")
+				print("minNotional PASSED.")'''
+				qtys = {}
+				qtys["qty"] = f"{startQTY}"
+				qtys["fiatQty"] = f"{(startQTY*act)*eurP}"
+				qtys["baseQty"] = f"{notionalValue}"
+				return [True, qtys]
+			else:
+				'''msg = [f"stepCheck/notionalValue NOT PASSED"]'''
+				return [False, {}]
 	def refreshBasicConfigs(self):
 		print("Probing config in DB.")
 		self.config = db.getConfig(self.user)
 		self.configInterval.updateTime = timedelta(minutes=int(self.config[self.requiried[0]]))
 		self.timer.updateTime = timedelta(minutes=int(self.config[self.requiried[1]]))
 		self.batchSize = int(self.config[self.requiried[2]])
+	def openTrade(self, tradeDict):
+		"""[summary]
+
+		Args:
+			tradeDict ([type]): openTime, symbol, entry, exit, price
+		"""
+		if db.getOpenTradeCount() >= self.maxTrades:
+			pass
+		else:
+			print("OPENING TRADE")
+			check = self._checkRules(tradeDict["pair"])
+			if check[0] == True:
+				tradeDict["qty"] = check[1]["qty"]
+				tradeDict["baseQty"] = check[1]["baseQty"]
+			else:
+				print("El trade no cumple las reglas. Revisa el codigo.")
+			if self.realTrades == True:
+				print("Opening trade")
+				#TODO aqui iria la orden de compra, con una instancia de Binance.client. 
+			else:
+				print("Opening MOCK trade")
+			tradeDict["openTime"] = datetime.now()
+			print("Inserting in database.")
+			## No funciona correctamente.
+			db.openTrade(tradeDict)
 
 class dbWorker(Worker):
 	def __init__(self, user, workType):

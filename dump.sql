@@ -40,8 +40,8 @@ CREATE TABLE IF NOT EXISTS `data_1d` (
 CREATE TABLE IF NOT EXISTS `trading` (
   `openTime` datetime NOT NULL,
   `symbol` varchar(50) NOT NULL,
-  `entry` varchar(50) NOT NULL,
-  `exit` varchar(50) NOT NULL,
+  `entryStra` varchar(50) NOT NULL,
+  `exitStra` varchar(50) NOT NULL,
   `qty` decimal(40,8) NOT NULL,
   `price` decimal(40,8) NOT NULL,
   `baseQty` decimal(40,8) NOT NULL,
@@ -49,8 +49,8 @@ CREATE TABLE IF NOT EXISTS `trading` (
 CREATE TABLE IF NOT EXISTS `traded` (
   `openTime` datetime NOT NULL,
   `symbol` varchar(50) NOT NULL,
-  `entry` varchar(50) NOT NULL,
-  `exit` varchar(50) NOT NULL,
+  `entryStra` varchar(50) NOT NULL,
+  `exitStra` varchar(50) NOT NULL,
   `qty` decimal(40,8) NOT NULL,
   `price` decimal(40,8) NOT NULL,
   `baseQty` decimal(40,8) NOT NULL,

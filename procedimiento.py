@@ -8,7 +8,7 @@ from dbOPS import DB
 from sys import argv
 import pandas as pd
 import pandas_ta as ta
-from sistema import Worker, openTrade
+from sistema import Worker
 
 workerTypes = ["MACDentry"]
 db = DB()
@@ -42,20 +42,25 @@ class MACDentry(Worker):
 									price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
 									print(f'{pair["symbol"]}: {price}')
 									print(df4h["openTime"].iat[-1])
-									tradeDict = {"symbol": pair["symbol"],
+									tradeDict = {"pair": pair,
+												"symbol": pair["symbol"],
 												"price": price,
 												"entry": "MACDentry",
 												"exit": "TSL"}
 									print(f"Abriendo trade con entrada MACD: {pair['symbol']}")
-									#openTrade(tradeDict)
+									self.openTrade(tradeDict)
 								else:
 									pass
+									#print("Ultimo dato menor o igual que 0")
 							else:
 								pass
+								#print("Anterior dato mayor el el actual")
 						else:
-							print("Cant Check histogram, NoneValue")
+							pass
+							##print("Cant Check histogram, NoneValue")
 					else:
-						print("Dataframe empty")
+						pass
+						#print("Dataframe empty")
 				self.timer.updateLastCheck(db.getOlderServe(self.work))
 
 if __name__ == "__main__":
