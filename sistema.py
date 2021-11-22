@@ -66,13 +66,14 @@ def checkRules(pair, ):
 
 #! Esqueletos de funciones para esta rama.
 #! Se van a escribir fuera porque seran metodos de una superclase que aun no existe
-def openTrade(tradeDict, tradeType):
+def openTrade(tradeDict, config):
 	"""[summary]
 
 	Args:
 		tradeDict ([type]): openTime, symbol, entry, exit, qty, price, baseQty
 	"""
 	#TODO Aqui iria una comprobacion de los trades maximos, definidos en la configuracion WIDE
+	if config
 	#TODO realTrades, hay que factorizarlo. Va a ser un bool en WIDE configuracion. En cuanto se implemente WIDE, al menos.
 	if tradeType == True:
 		print("Opening trade")
@@ -129,7 +130,7 @@ class Worker:
 		self.client = Client(self.API[0], self.API[1])
 		self.config = db.getConfig(user)
 		self.requiried = [f"{self.work}_configInterval", f"{self.work}_interval", f"{self.work}_batchSize"]
-		self.wide = ["wide_realTrades", "wide_fiat", "wide_maxInv"]
+		self.wide = ["wide_realTrades", "wide_fiat", "wide_maxInv", "wide_maxTrades"]
 		self._setupWorkConfig()
 		self._setupWideConfig()
 	def _setupWorkConfig(self):
@@ -166,6 +167,11 @@ class Worker:
 		except KeyError:
 			self.maxInv = 30
 			db.setConfig(self.user, self.wide[2], 30)
+		try:
+			self.maxTrades = self.config[self.wide[3]] #Trades maximos abiertos simultaneamente
+		except KeyError:
+			self.maxTrades = 10 
+			db.setConfig(self.user, self.wide[3], 10)
 	def refreshBasicConfigs(self):
 		print("Probing config in DB.")
 		self.config = db.getConfig(self.user)
