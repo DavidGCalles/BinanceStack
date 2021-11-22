@@ -66,7 +66,7 @@ def checkRules(pair, ):
 
 #! Esqueletos de funciones para esta rama.
 #! Se van a escribir fuera porque seran metodos de una superclase que aun no existe
-def openTrade(tradeDict):
+def openTrade(tradeDict, tradeType):
 	"""[summary]
 
 	Args:
@@ -74,7 +74,7 @@ def openTrade(tradeDict):
 	"""
 	#TODO Aqui iria una comprobacion de los trades maximos, definidos en la configuracion WIDE
 	#TODO realTrades, hay que factorizarlo. Va a ser un bool en WIDE configuracion. En cuanto se implemente WIDE, al menos.
-	if realTrades == True:
+	if tradeType == True:
 		print("Opening trade")
 		#TODO aqui iria la orden de compra, con una instancia de Binance.client. 
 	else:
@@ -129,6 +129,10 @@ class Worker:
 		self.client = Client(self.API[0], self.API[1])
 		self.config = db.getConfig(user)
 		self.requiried = [f"{self.work}_configInterval", f"{self.work}_interval", f"{self.work}_batchSize"]
+		self.wide = ["wide_realTrades", "wide_fiat", "wide_maxInv"]
+		self._setupWorkConfig()
+		self._setupWideConfig()
+	def _setupWorkConfig(self):
 		#Tantos bloques Try son para aislar cada configuracion. Si los uniese, la ausencia de una caracteristica haria que
 		# cada uno de los defaults se sobreescribiese.
 		try:
@@ -146,6 +150,22 @@ class Worker:
 		except KeyError:
 			self.batchSize = 20
 			db.setConfig(self.user, self.requiried[2], str(20))
+	def _setupWideConfig(self):
+		try:
+			self.realTrades = bool(self.config[self.wide[0]]) #Variable para determinar paper/real trading.
+		except KeyError:
+			self.realTrades = False
+			db.setConfig(self.user, self.wide[0], False)
+		try:
+			self.fiat = self.config[self.wide[1]] #Variable para determinar la moneda fiat.
+		except KeyError:
+			self.fiat = "EUR"
+			db.setConfig(self.user, self.wide[1], "EUR")
+		try:
+			self.maxInv = self.config[self.wide[2]] #Maxima cantidad (en la FIAT seleccionada) de inversion por trade
+		except KeyError:
+			self.maxInv = 30
+			db.setConfig(self.user, self.wide[2], 30)
 	def refreshBasicConfigs(self):
 		print("Probing config in DB.")
 		self.config = db.getConfig(self.user)
