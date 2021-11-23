@@ -10,67 +10,7 @@ import pandas as pd
 import pandas_ta as ta
 
 workerTypes = ["dbWorker", "dbMiner", "dbCalculator"]
-realTrades = False
 db = DB()
-
-def checkRules(pair, ):
-	#! IMPORTANTE. Esta funcion pertenecera a una superclase no existente todavia.
-	#! IMPORTANTE. Esta función hace uso de muchas opciones de configuracion WIDE
-	# Por todo esto y mucho más, solo se va a crear el esqueleto NO FUNCIONAL y comentado.
-	# Falta definir los argumentos de entrada
-	#? Estoy a punto de potar. La funcion esta muy bien escrita pero... no hay comentarios y se apoya en estructuras que ya no existen.
-	#? Todos los atributos de self provienen de un diccionario de la base de datos, tabla symbol. Sustituidos por el argumento "pair"
-	"""Comprueba las reglas de trading.
-	Las reglas de trading, segun las define la API de Binance, son las siguientes:
-		- filtro minNotional: el filtro minNotional se obtiene con (price*quantity)
-		- filtro marketLot: este filtro se supera con las siguientes condiciones
-			- quantity >= minQty
-			- quantity <= maxQty
-			- (quantity-minQty) % stepSize == 0
-	"""
-	act = Decimal(client.get_symbol_ticker(symbol=pair['symbol'])["price"]) # Precio actual del par.
-	eurP = Decimal(client.get_symbol_ticker(symbol=f"{config.symbol}EUR")["price"]) #Precio en euros de la moneda base #! Cuidado con esta asignacion. 
-	invBASE = self.maxINV/eurP ##Precio de inversion minima en moneda base #!MAXINV proviene de la configuracion WIDE
-	startQTY = invBASE/act ##CANTIDAD de moneda asset
-	notionalValue = startQTY*act
-	stepCheck = (startQTY-pair["minQty"])%pair["stepSize"]
-	if stepCheck != 0:
-		startQTY = startQTY-stepCheck
-		stepCheck = (startQTY-pair["minQty"])%pair["stepSize"]
-		notionalValue = startQTY*act
-		if stepCheck == 0 and notionalValue >= Decimal(sym["minNotional"]):
-			'''print("stepCheck PASSED. Reajustado")
-			print("minNotional PASSED.")'''
-			self.qtys["baseQty"] = f"{startQTY}"
-			self.qtys["eurQty"] = f"{(startQTY*act)*eurP}"
-			self.qtys["assetQty"] = f"{notionalValue}"
-			return True
-		else:
-			'''msg = [f"stepCheck/notionalValue NOT PASSED"]'''
-			return False
-	else:
-		#print("stepCheck PASSED")
-		if notionalValue >= Decimal(sym["minNotional"]):
-			#print("minNotional PASSED")
-			self.qtys["baseQty"] = f"{startQTY}"
-			self.qtys["eurQty"] = f"{(startQTY*act)*eurP}"
-			self.qtys["assetQty"] = f"{notionalValue}"
-			return True
-		else:
-			#print("minNotional NOT PASSED")
-			self.qtys["baseQty"] = f""
-			self.qtys["eurQty"] = f""
-			self.qtys["assetQty"] = f""
-			#print("Trading Rules Check NOT PASSED. Check de loop.")
-			return False
-
-#! Esqueletos de funciones para esta rama.
-#! Se van a escribir fuera porque seran metodos de una superclase que aun no existe
-
-def closeTrade(tradeDict):
-	print("Selling")
-	print("Moving from Trading to Traded in DB")
-#!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 class Timer:
 	def __init__(self, updateTime = timedelta(minutes=5)):
@@ -246,6 +186,9 @@ class Worker:
 				db.openTrade(tradeDict)
 			else:
 				print("El trade no cumple las reglas. Revisa el codigo.")
+	def closeTrade(self, tradeDict):
+		print("Selling")
+		print("Moving from Trading to Traded in DB")
 
 class dbWorker(Worker):
 	def __init__(self, user, workType):
