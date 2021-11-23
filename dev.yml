@@ -62,15 +62,15 @@ services:
       - dbworker
     volumes:
       - code:/var/www/html
-#  dbcalculator:
-#    build: 
-#      dockerfile: workerDev
-#    command: code/sistema.py david dbCalculator
-#    depends_on: 
-#      - mariadb
-#      - dbworker
-#    volumes:
-#      - code:/var/www/html
+  dbcalculator:
+    build: 
+      dockerfile: workerDev
+    command: code/sistema.py david dbCalculator
+    depends_on: 
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
   macdentry:
     build:
       dockerfile: workerDev

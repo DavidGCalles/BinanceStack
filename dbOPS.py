@@ -96,7 +96,7 @@ class DB:
 		self.database = "binance"
 	def tryConnect(self):
 		try:
-			conn = mariadb.connect(
+			self.conn = mariadb.connect(
 				user=self.user,
 				password=self.password,
 				host=self.host,
@@ -105,7 +105,7 @@ class DB:
 				)
 		except mariadb.Error as e:
 				print(f"Error connecting to MariaDB Platform: {e}")
-		return conn.cursor()
+		return self.conn.cursor()
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), limit = 100):
 		#! Determina las cuestiones horarias (UTC) del funcionamiento y explicalas!!!!
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
@@ -586,14 +586,13 @@ class DB:
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM trading"
 		cur.execute(query)
-		count = 0
 		for point in cur:
 			try:
 				return int(point[0])
 			except:
 				return 0
-	#! Esqueleto de metodos necesarios para abrir y cerrar trades.False
-	#! Como siempre, este archivo se usa como interfaz para la DB.
+			finally:
+				self.conn.close()
 	def openTrade(self, tradeDict):
 		try:
 			conn = mariadb.connect(
@@ -610,6 +609,18 @@ class DB:
 		cur.execute(query)
 		conn.commit()
 		conn.close()
+	def isTradeOpen(self, symbol):
+		cur = self.tryConnect()
+		query = f"SELECT COUNT(*) FROM trading WHERE symbol = '{symbol}'"
+		cur.execute(query)
+		for point in cur:
+			try:
+				return bool(point[0])
+			except:
+				return False
+			finally:
+				self.conn.close()
+	#!
 	def closeTrade(self):
 		pass
 	#! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
