@@ -29,7 +29,7 @@ class MACDentry(Worker):
 		self.timer.updateLastCheck(db.getOlderServe(self.work))
 		while True:
 			if self.timer.tick() == True:
-				pairs = db.servePairs(self.work, limit=100)
+				pairs = db.servePairs(self.work, limit=self.batchSize)
 				for pair in pairs:
 					df4h = db.getDataFrame(pair["symbol"], "4h")
 					if df4h.empty == False:

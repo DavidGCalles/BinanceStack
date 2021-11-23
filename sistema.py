@@ -235,17 +235,17 @@ class Worker:
 			if check[0] == True:
 				tradeDict["qty"] = check[1]["qty"]
 				tradeDict["baseQty"] = check[1]["baseQty"]
+				if self.realTrades == True:
+					print("Opening trade")
+					#TODO aqui iria la orden de compra, con una instancia de Binance.client. 
+				else:
+					print("Opening MOCK trade")
+				tradeDict["openTime"] = datetime.now()
+				print("Inserting in database.")
+				## No funciona correctamente.
+				db.openTrade(tradeDict)
 			else:
 				print("El trade no cumple las reglas. Revisa el codigo.")
-			if self.realTrades == True:
-				print("Opening trade")
-				#TODO aqui iria la orden de compra, con una instancia de Binance.client. 
-			else:
-				print("Opening MOCK trade")
-			tradeDict["openTime"] = datetime.now()
-			print("Inserting in database.")
-			## No funciona correctamente.
-			db.openTrade(tradeDict)
 
 class dbWorker(Worker):
 	def __init__(self, user, workType):
