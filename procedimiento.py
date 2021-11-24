@@ -4,13 +4,14 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from binance.client import Client
+from binance import ThreadedWebsocketManager
 from dbOPS import DB
 from sys import argv
 import pandas as pd
 import pandas_ta as ta
 from sistema import Worker
 
-workerTypes = ["MACDentry"]
+workerTypes = ["MACDentry", "TSL"]
 db = DB()
 
 class MACDentry(Worker):
@@ -101,6 +102,68 @@ class MACDentry(Worker):
 					pass
 					#print("Dataframe empty")'''
 				
+class TSLexit(Worker):
+	def __init__(self, user, workType):
+		super().__init__(user, workType)
+	def setLimits(self, price):
+		self.softLimit = price+(price*Decimal("0.07"))
+		self.stopLimit = price-(price*Decimal("0.05"))
+	def loop(self,msg):
+		try:
+			print(msg)
+			price = Decimal(msg["c"])
+			print(f"{self.trade['symbol']} -- {self.stopLimit} -- {price} -- {self.softLimit}")
+			if price <= self.stopLimit:
+				#Vende cagando leches
+				print("CERRAMOS!")
+				db.pingTrade(self.trade)
+				db.closeTrade(self.trade)
+				self.twm.stop()
+				print("LIMIT UP!")
+				self.setLimits(self.softLimit)
+				db.pingTrade(self.trade)
+			db.pingTrade(self.trade)
+		except KeyError:
+			pass
+	def startWork(self):
+		#Pregunta si hay pares desatendidos en trading #! funcion! db? Si, ademas es una metrica importante.
+		unattended = db.isTradeUnattended(self.work, timedelta(seconds=5))
+		if unattended != None:
+			self.trade = unattended
+			db.pingTrade(self.trade)
+			interval = timedelta(seconds=1)
+			lastCheck = datetime.now()
+			#print(self.trade)
+			self.setLimits(Decimal(self.trade["price"]))
+			self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
+			print("TWM inicializado")
+			self.twm.start()
+			print("TWM start")
+			self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
+			print("Socket start")
+			self.twm.join()
+			print("TWM join")
+			'''while True:
+				now = datetime.now()
+				if now > lastCheck+interval:
+					price = Decimal(self.client.get_symbol_ticker(symbol=self.trade["symbol"])["price"])
+					print(f"{self.trade['symbol']} -- {self.stopLimit} -- {price} -- {self.softLimit}")
+					if price <= self.stopLimit:
+						#Vende cagando leches
+						print("CERRAMOS!")
+						db.pingTrade(self.trade)
+						db.closeTrade(self.trade)
+						break
+					elif price >= self.softLimit:
+						print("LIMIT UP!")
+						self.setLimits(self.softLimit)
+						db.pingTrade(self.trade)
+					db.pingTrade(self.trade)
+		else:
+			print("No trades need TSL monitoring")'''
+
+		#Descarga el par que sobrepase el thresold de supervision (7s) y comienza la monitorizacion
+		#La monitorizacion 
 
 if __name__ == "__main__":
 	##argv1 = USER/test
@@ -113,6 +176,8 @@ if __name__ == "__main__":
 			if argv[2] in workerTypes:
 				if argv[2] == "MACDentry":
 					worker = MACDentry(argv[1], argv[2])
+				elif argv[2] == "TSL":
+					worker = TSLexit(argv[1], argv[2])
 				try:
 					worker.startWork()
 				except KeyboardInterrupt:
