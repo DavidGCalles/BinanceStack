@@ -649,13 +649,16 @@ class DB:
 		self.conn.close()
 	def closeTrade(self, trade):
 		cur = self.tryConnect()
-		query = f"INSERT INTO traded (`openTime`, `symbol`, `entryStra`, `exitStra`, `qty`, `price`, `baseQty`, `closeTime`, `sellPrice`,`baseProfit`) VALUES ('{trade['openTime']}', '{trade['symbol']}', '{trade['entryStra']}', '{trade['qty']}', '{trade['price']}', '{trade['baseQty']}', '{trade['closeTime']}', '{trade['sellPrice']}', '{trade['baseProfit']}');"
+		query = f"INSERT INTO traded (`openTime`, `symbol`, `entryStra`, `exitStra`, `qty`, `price`, `baseQty`, `closeTime`, `sellPrice`,`baseProfit`) VALUES ('{trade['openTime']}', '{trade['symbol']}', '{trade['entryStra']}', '{trade['exitStra']}','{trade['qty']}', '{trade['price']}', '{trade['baseQty']}', '{trade['closeTime']}', '{trade['sellPrice']}', '{trade['baseProfit']}');"
+		print(query)
 		cur.execute(query)
 		self.conn.commit()
-		query = f"DELETE * FROM trading WHERE symbol = '{trade['symbol']}'"
+		print("Insertando CIERRE")
+		query = f"DELETE FROM trading WHERE symbol = '{trade['symbol']}'"
 		cur.execute(query)
 		self.conn.commit()
 		self.conn.close()
+		print("Eliminando ABIERTO")
 
 if __name__ == "__main__":
 	db1 = DB()

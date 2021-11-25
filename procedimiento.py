@@ -10,6 +10,7 @@ from sys import argv
 import pandas as pd
 import pandas_ta as ta
 from sistema import Worker
+from time import sleep
 
 workerTypes = ["MACDentry", "TSL"]
 db = DB()
@@ -110,15 +111,18 @@ class TSLexit(Worker):
 		self.stopLimit = price-(price*Decimal("0.05"))
 	def loop(self,msg):
 		try:
-			print(msg)
 			price = Decimal(msg["c"])
 			print(f"{self.trade['symbol']} -- {self.stopLimit} -- {price} -- {self.softLimit}")
 			if price <= self.stopLimit:
 				#Vende cagando leches
 				print("CERRAMOS!")
+				self.trade['sellPrice'] = price
+				self.trade['baseProfit'] = (self.trade["qty"]*price)-self.trade["baseQty"]
+				self.trade['closeTime'] = datetime.now()
 				db.pingTrade(self.trade)
 				db.closeTrade(self.trade)
 				self.twm.stop()
+			elif price >= self.softLimit:
 				print("LIMIT UP!")
 				self.setLimits(self.softLimit)
 				db.pingTrade(self.trade)
@@ -127,40 +131,20 @@ class TSLexit(Worker):
 			pass
 	def startWork(self):
 		#Pregunta si hay pares desatendidos en trading #! funcion! db? Si, ademas es una metrica importante.
-		unattended = db.isTradeUnattended(self.work, timedelta(seconds=5))
-		if unattended != None:
-			self.trade = unattended
-			db.pingTrade(self.trade)
-			interval = timedelta(seconds=1)
-			lastCheck = datetime.now()
-			#print(self.trade)
-			self.setLimits(Decimal(self.trade["price"]))
-			self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
-			print("TWM inicializado")
-			self.twm.start()
-			print("TWM start")
-			self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
-			print("Socket start")
-			self.twm.join()
-			print("TWM join")
-			'''while True:
-				now = datetime.now()
-				if now > lastCheck+interval:
-					price = Decimal(self.client.get_symbol_ticker(symbol=self.trade["symbol"])["price"])
-					print(f"{self.trade['symbol']} -- {self.stopLimit} -- {price} -- {self.softLimit}")
-					if price <= self.stopLimit:
-						#Vende cagando leches
-						print("CERRAMOS!")
-						db.pingTrade(self.trade)
-						db.closeTrade(self.trade)
-						break
-					elif price >= self.softLimit:
-						print("LIMIT UP!")
-						self.setLimits(self.softLimit)
-						db.pingTrade(self.trade)
-					db.pingTrade(self.trade)
-		else:
-			print("No trades need TSL monitoring")'''
+		unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
+		while True:
+			if unattended != None:
+				self.trade = unattended
+				db.pingTrade(self.trade)
+				self.setLimits(Decimal(self.trade["price"]))
+				self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
+				self.twm.start()
+				self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
+				self.twm.join()
+			else:
+				print("No trades need TSL monitoring")
+				sleep(30)
+				unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
 
 		#Descarga el par que sobrepase el thresold de supervision (7s) y comienza la monitorizacion
 		#La monitorizacion 
