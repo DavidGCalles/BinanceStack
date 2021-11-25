@@ -4,13 +4,15 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from binance.client import Client
+from binance import ThreadedWebsocketManager
 from dbOPS import DB
 from sys import argv
 import pandas as pd
 import pandas_ta as ta
 from sistema import Worker
+from time import sleep
 
-workerTypes = ["MACDentry"]
+workerTypes = ["MACDentry", "TSL"]
 db = DB()
 
 class MACDentry(Worker):
@@ -101,6 +103,51 @@ class MACDentry(Worker):
 					pass
 					#print("Dataframe empty")'''
 				
+class TSLexit(Worker):
+	def __init__(self, user, workType):
+		super().__init__(user, workType)
+	def setLimits(self, price):
+		self.softLimit = price+(price*Decimal("0.07"))
+		self.stopLimit = price-(price*Decimal("0.05"))
+	def loop(self,msg):
+		try:
+			price = Decimal(msg["c"])
+			print(f"{self.trade['symbol']} -- {self.stopLimit} -- {price} -- {self.softLimit}")
+			if price <= self.stopLimit:
+				#Vende cagando leches
+				print("CERRAMOS!")
+				self.trade['sellPrice'] = price
+				self.trade['baseProfit'] = (self.trade["qty"]*price)-self.trade["baseQty"]
+				self.trade['closeTime'] = datetime.now()
+				db.pingTrade(self.trade)
+				db.closeTrade(self.trade)
+				self.twm.stop()
+			elif price >= self.softLimit:
+				print("LIMIT UP!")
+				self.setLimits(self.softLimit)
+				db.pingTrade(self.trade)
+			db.pingTrade(self.trade)
+		except KeyError:
+			pass
+	def startWork(self):
+		#Pregunta si hay pares desatendidos en trading #! funcion! db? Si, ademas es una metrica importante.
+		unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
+		while True:
+			if unattended != None:
+				self.trade = unattended
+				db.pingTrade(self.trade)
+				self.setLimits(Decimal(self.trade["price"]))
+				self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
+				self.twm.start()
+				self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
+				self.twm.join()
+			else:
+				print("No trades need TSL monitoring")
+				sleep(30)
+				unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
+
+		#Descarga el par que sobrepase el thresold de supervision (7s) y comienza la monitorizacion
+		#La monitorizacion 
 
 if __name__ == "__main__":
 	##argv1 = USER/test
@@ -113,6 +160,8 @@ if __name__ == "__main__":
 			if argv[2] in workerTypes:
 				if argv[2] == "MACDentry":
 					worker = MACDentry(argv[1], argv[2])
+				elif argv[2] == "TSL":
+					worker = TSLexit(argv[1], argv[2])
 				try:
 					worker.startWork()
 				except KeyboardInterrupt:

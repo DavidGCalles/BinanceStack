@@ -80,6 +80,15 @@ services:
       - dbworker
     volumes:
       - code:/var/www/html
+  tslexit:
+    build:
+      dockerfile: workerDev
+    command: code/procedimiento.py david TSL
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
 volumes:
   dbData:
   grafanaConf:

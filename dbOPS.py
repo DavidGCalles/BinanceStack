@@ -80,7 +80,7 @@ def parseSQLtoDict(fieldNames, responseTuple):
 	De hecho, las vamos a reconstruir a su semejanza. Es hasta elegante."""
 	d = {}
 	for ind, val in enumerate(fieldNames):
-		d[val] = fieldNames[ind]
+		d[val] = responseTuple[ind]
 	return d
 
 class DB:
@@ -620,10 +620,45 @@ class DB:
 				return False
 			finally:
 				self.conn.close()
-	#!
-	def closeTrade(self):
-		pass
-	#! !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+	def isTradeUnattended(self, exitType, thresold):
+		cur = self.tryConnect()
+		now = datetime.now()
+		query = f"SELECT * FROM trading WHERE lastCheck IS NULL AND exitStra = '{exitType}' ORDER BY openTime LIMIT 1"
+		cur.execute(query)
+		for trade in cur:
+			fieldNames = ["openTime", "symbol", "entryStra", "exitStra", "qty", "price", "baseQty", "lastCheck"]
+			self.conn.close()
+			return parseSQLtoDict(fieldNames, trade)
+		query = f"SELECT * FROM trading WHERE exitStra = '{exitType}' ORDER BY lastCheck LIMIT 1"
+		cur.execute(query)
+		for trade in cur:
+			fieldNames = ["openTime", "symbol", "entryStra", "exitStra", "qty", "price", "baseQty", "lastCheck"]
+			tradeDict = parseSQLtoDict(fieldNames, trade)
+			if tradeDict["lastCheck"]+thresold < datetime.now():
+				self.conn.close()
+				return tradeDict
+			else:
+				self.conn.close()
+				return None
+		self.conn.close()
+	def pingTrade(self, trade):
+		cur = self.tryConnect()
+		query = f"UPDATE trading SET lastCheck = '{datetime.now()}' WHERE symbol = '{trade['symbol']}'"
+		cur.execute(query)
+		self.conn.commit()
+		self.conn.close()
+	def closeTrade(self, trade):
+		cur = self.tryConnect()
+		query = f"INSERT INTO traded (`openTime`, `symbol`, `entryStra`, `exitStra`, `qty`, `price`, `baseQty`, `closeTime`, `sellPrice`,`baseProfit`) VALUES ('{trade['openTime']}', '{trade['symbol']}', '{trade['entryStra']}', '{trade['exitStra']}','{trade['qty']}', '{trade['price']}', '{trade['baseQty']}', '{trade['closeTime']}', '{trade['sellPrice']}', '{trade['baseProfit']}');"
+		print(query)
+		cur.execute(query)
+		self.conn.commit()
+		print("Insertando CIERRE")
+		query = f"DELETE FROM trading WHERE symbol = '{trade['symbol']}'"
+		cur.execute(query)
+		self.conn.commit()
+		self.conn.close()
+		print("Eliminando ABIERTO")
 
 if __name__ == "__main__":
 	db1 = DB()
