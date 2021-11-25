@@ -16,40 +16,43 @@ workerTypes = ["MACDentry", "TSL"]
 db = DB()
 
 class MACDentry(Worker):
-	"""[summary]
+	"""Entrada estandar MACD. Está en construcción y tiene la logica justa para
+	no realizar trades totalmente kamikazes. 
+	
+	Es el esqueleto de lo que pretendo que sea una función mas versatil con la que poder
+	llamar a varias MACD diferentes si se requiere.
 
-	#! IMPORRTANTE
-	tradeDict = {"pair": pair,
-				"symbol": pair["symbol"],
-				"price": price,
-				"entry": "MACDentry",
-				"exit": "TSL"}
-	#! -----------------------------------------
-	Args:
-		Worker ([type]): [description]
+	Pero eso depende del sistema, también, y por el momento estamos aquí limitados.
 	"""
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
 	def _checkDate(self, df):
-		"""Comprueba que la fecha no es más lejana de self.maxOld
+		"""#! NO ESTA EN USO
+		Comprueba que la fecha no es más lejana de self.maxOld
 
 		Args:
 			df ([type]): [description]
 		"""
 		pass
 	def startWork(self):
+		"""Funcion que ejecuta el loop de entrada y valida los datos de la base de datos.
+		"""
+		#Obtiene la ultima fecha de comprobación mas antigua
 		self.timer.updateLastCheck(db.getOlderServe(self.work))
 		while True:
 			if self.timer.tick() == True:
 				pairs = db.servePairs(self.work, limit=self.batchSize)
 				for pair in pairs:
+					#Comprobamos si hay trade abierto o no.
 					if db.isTradeOpen(pair["symbol"]) == False:
+						#Solicitamos el dataframe correspondiente
 						df4h = db.getDataFrame(pair["symbol"], "4h")
 						if df4h.empty == True:
-							#print("Dataframe Vacio")
+							#El dataframe puede estar vacio, primera validacion.
 							pass
 						else:
 							try:
+								#He recibido errores raros. Por eso el except. A ver si lo pillo.
 								last4h = df4h["histogram"].iat[-1]
 								prelast4h = df4h["histogram"].iat[-2]
 							except:
@@ -57,7 +60,8 @@ class MACDentry(Worker):
 								print("ERROR RARO!")
 								last4h = None
 								print(df4h)
-							if last4h is not None and prelast4h is not None: #### Aqui terminan las estructuras de control y empieza el algoritmo propiamente dicho.
+							# Aqui terminan las estructuras de control y empieza el algoritmo propiamente dicho.
+							if last4h is not None and prelast4h is not None: 
 								if prelast4h < 0:
 									if last4h > 0:
 										price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
