@@ -77,35 +77,6 @@ class MACDentry(Worker):
 				self.timer.updateLastCheck(db.getOlderServe(self.work))
 			if self.configInterval.tick() == True:
 				self.refreshBasicConfigs()
-				'''if df4h.empty == False:
-					last4h = df4h["histogram"].iat[-1]
-					prelast4h = df4h["histogram"].iat[-2]
-					if last4h is not None and prelast4h is not None: 
-						if last4h > prelast4h:
-							if last4h > 0:
-								#print(Decimal(df4h["histogram"].iat[-1]))
-								price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
-								print(f'{pair["symbol"]}: {price}')
-								print(df4h["openTime"].iat[-1])
-								tradeDict = {"pair": pair,
-											"symbol": pair["symbol"],
-											"price": price,
-											"entry": "MACDentry",
-											"exit": "TSL"}
-								print(f"Abriendo trade con entrada MACD: {pair['symbol']}")
-								self.openTrade(tradeDict)
-							else:
-								pass
-								#print("Ultimo dato menor o igual que 0")
-						else:
-							pass
-							#print("Anterior dato mayor el el actual")
-					else:
-						pass
-						##print("Cant Check histogram, NoneValue")
-				else:
-					pass
-					#print("Dataframe empty")'''
 				
 class TSLexit(Worker):
 	def __init__(self, user, workType):
