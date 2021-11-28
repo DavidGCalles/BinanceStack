@@ -105,6 +105,7 @@ class DB:
 				)
 		except mariadb.Error as e:
 				print(f"Error connecting to MariaDB Platform: {e}")
+		self.conn.autocommit = False
 		return self.conn.cursor()
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), limit = 100):
 		#! Determina las cuestiones horarias (UTC) del funcionamiento y explicalas!!!!
@@ -605,7 +606,7 @@ class DB:
 		except mariadb.Error as e:
 			print(f"Error connecting to MariaDB Platform: {e}")
 		cur = conn.cursor()
-		query = f"INSERT INTO trading (openTime, symbol, entryStra, exitStra, qty, price, baseQty) VALUES ('{tradeDict['openTime']}','{tradeDict['symbol']}','{tradeDict['entry']}','{tradeDict['exit']}','{tradeDict['qty']}','{tradeDict['price']}','{tradeDict['baseQty']}')"
+		query = f"INSERT INTO trading (openTime, symbol, entryStra, exitStra, qty, price, baseQty, lastCheck) VALUES ('{tradeDict['openTime']}','{tradeDict['symbol']}','{tradeDict['entry']}','{tradeDict['exit']}','{tradeDict['qty']}','{tradeDict['price']}','{tradeDict['baseQty']}','{datetime.now()}')"
 		cur.execute(query)
 		conn.commit()
 		conn.close()
@@ -623,13 +624,7 @@ class DB:
 	def isTradeUnattended(self, exitType, thresold):
 		cur = self.tryConnect()
 		now = datetime.now()
-		query = f"SELECT * FROM trading WHERE lastCheck IS NULL AND exitStra = '{exitType}' ORDER BY openTime LIMIT 1"
-		cur.execute(query)
-		for trade in cur:
-			fieldNames = ["openTime", "symbol", "entryStra", "exitStra", "qty", "price", "baseQty", "lastCheck"]
-			self.conn.close()
-			return parseSQLtoDict(fieldNames, trade)
-		query = f"SELECT * FROM trading WHERE exitStra = '{exitType}' ORDER BY lastCheck LIMIT 1"
+		query = f"SELECT * FROM trading WHERE exitStra = '{exitType}' ORDER BY lastCheck LIMIT 1 FOR UPDATE SKIP LOCKED"
 		cur.execute(query)
 		for trade in cur:
 			fieldNames = ["openTime", "symbol", "entryStra", "exitStra", "qty", "price", "baseQty", "lastCheck"]
