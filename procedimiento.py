@@ -11,6 +11,7 @@ import pandas as pd
 import pandas_ta as ta
 from sistema import Worker
 from time import sleep
+from mariadb import OperationalError
 
 workerTypes = ["MACDentry", "TSL"]
 db = DB()
@@ -104,22 +105,23 @@ class TSLexit(Worker):
 			db.pingTrade(self.trade)
 		except KeyError:
 			pass
+		except OperationalError:
+			self.trade = None
 	def startWork(self):
 		#Pregunta si hay pares desatendidos en trading #! funcion! db? Si, ademas es una metrica importante.
-		unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
+		self.trade = db.isTradeUnattended(self.work, timedelta(seconds=30))
 		while True:
-			if unattended != None:
-				self.trade = unattended
+			if self.trade != None:
 				db.pingTrade(self.trade)
 				self.setLimits(Decimal(self.trade["price"]))
 				self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 				self.twm.start()
 				self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
-				self.twm.join()
+				#self.twm.join()
 			else:
 				print("No trades need TSL monitoring")
 				sleep(30)
-				unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
+				self.unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
 
 		#Descarga el par que sobrepase el thresold de supervision (7s) y comienza la monitorizacion
 		#La monitorizacion 
