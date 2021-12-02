@@ -12,6 +12,7 @@ import pandas_ta as ta
 from sistema import Worker
 from time import sleep
 from mariadb import OperationalError
+from ssl import SSLError
 
 workerTypes = ["MACDentry", "TSL"]
 db = DB()
@@ -97,26 +98,27 @@ class TSLexit(Worker):
 				self.trade['closeTime'] = datetime.now()
 				db.pingTrade(self.trade)
 				db.closeTrade(self.trade)
-				self.twm.stop()
+				self.trade = None
+				self.twm.stop_socket(self.socketName)
 			elif price >= self.softLimit:
 				print("LIMIT UP!")
 				self.setLimits(self.softLimit)
 				db.pingTrade(self.trade)
 			db.pingTrade(self.trade)
-		except KeyError:
-			pass
+		except KeyError or TypeError or SSLError:
+			print("Error1")
 		except OperationalError:
-			self.trade = None
+			print("Error2")
 	def startWork(self):
 		#Pregunta si hay pares desatendidos en trading #! funcion! db? Si, ademas es una metrica importante.
 		self.trade = db.isTradeUnattended(self.work, timedelta(seconds=30))
+		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
+		self.twm.start()
 		while True:
 			if self.trade != None:
 				db.pingTrade(self.trade)
 				self.setLimits(Decimal(self.trade["price"]))
-				self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
-				self.twm.start()
-				self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
+				self.socketName = self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
 				#self.twm.join()
 			else:
 				print("No trades need TSL monitoring")

@@ -639,9 +639,13 @@ class DB:
 	def pingTrade(self, trade):
 		cur = self.tryConnect()
 		query = f"UPDATE trading SET lastCheck = '{datetime.now()}' WHERE symbol = '{trade['symbol']}'"
-		cur.execute(query)
-		self.conn.commit()
-		self.conn.close()
+		try:
+			cur.execute(query)
+			self.conn.commit()
+		except mariadb.OperationalError:
+			print("Operational Fail, HAZ ALGOOOOO")
+		finally:
+			self.conn.close()
 	def closeTrade(self, trade):
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM traded WHERE openTime = '{trade['openTime']}' AND symbol = '{trade['symbol']}' AND qty = '{trade['qty']}'"
