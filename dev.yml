@@ -53,33 +53,33 @@ services:
       - mariadb
     volumes:
       - code:/var/www/html
-#  dbminer:
-#    build:
-#      dockerfile: workerDev
-#    command: code/sistema.py david dbMiner
-#    depends_on:
-#      - mariadb
-#      - dbworker
-#    volumes:
-#      - code:/var/www/html
-#  dbcalculator:
-#    build: 
-#      dockerfile: workerDev
-#    command: code/sistema.py david dbCalculator
-#    depends_on: 
-#      - mariadb
-#      - dbworker
-#    volumes:
-#      - code:/var/www/html
-#  macdentry:
-#    build:
-#      dockerfile: workerDev
-#    command: code/procedimiento.py david MACDentry
-#    depends_on:
-#      - mariadb
-#      - dbworker
-#    volumes:
-#      - code:/var/www/html
+  dbminer:
+    build:
+      dockerfile: workerDev
+    command: code/sistema.py david dbMiner
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
+  dbcalculator:
+    build: 
+      dockerfile: workerDev
+    command: code/sistema.py david dbCalculator
+    depends_on: 
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
+  macdentry:
+    build:
+      dockerfile: workerDev
+    command: code/procedimiento.py david MACDentry
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
   tslexit:
     build:
       dockerfile: workerDev

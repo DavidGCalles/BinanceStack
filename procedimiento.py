@@ -102,10 +102,21 @@ class TSLexit(Worker):
 				count+=1
 				print(f'{res["s"]}: {res["c"]} || v {self.stopLimit:.8f} || ^ {self.softLimit:.8f}')
 				if count >= 5:
-					print(f"PINGDB!!!")
+					print(f"DB POLL")
 					db.pingTrade(self.trade)
 					count = 0
 				price = Decimal(res["c"])
+				if price <= self.stopLimit:
+					#Vende cagando leches
+					self.trade['sellPrice'] = price
+					self.trade['baseProfit'] = (self.trade["qty"]*price)-self.trade["baseQty"]
+					self.trade['closeTime'] = datetime.now()
+					db.closeTrade(self.trade)
+					print(f'{res["s"]}: {res["c"]} || v {self.stopLimit:.8f} || CERRADO!!')
+					break
+				elif price >= self.softLimit:
+					print(f'{res["s"]}: {res["c"]} || ^ {self.softLimit:.8f} || SOFT LIMIT UP')
+					self.setLimits(self.softLimit)
 		await client.close_connection()
 		'''try:
 			price = Decimal(msg["c"])
