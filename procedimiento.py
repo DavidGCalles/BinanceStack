@@ -3,8 +3,9 @@
 
 from datetime import datetime, timedelta
 from decimal import Decimal
+import asyncio
 from binance.client import Client
-from binance import ThreadedWebsocketManager
+from binance import AsyncClient, BinanceSocketManager
 from dbOPS import DB
 from sys import argv
 import pandas as pd
@@ -86,8 +87,38 @@ class TSLexit(Worker):
 	def setLimits(self, price):
 		self.softLimit = price+(price*Decimal("0.07"))
 		self.stopLimit = price-(price*Decimal("0.05"))
-	def loop(self,msg):
-		try:
+	async def loop(self):
+		db.pingTrade(self.trade)
+		client = await AsyncClient.create(api_key=self.API[0], api_secret=self.API[1])
+		bm = BinanceSocketManager(client)
+		# start any sockets here, i.e a trade socket
+		ts = bm.symbol_ticker_socket(self.trade["symbol"])
+		# then start receiving messages
+		count = 0
+		self.setLimits(Decimal(self.trade["price"]))
+		async with ts as tscm:
+			while True:
+				res = await tscm.recv()
+				count+=1
+				print(f'{res["s"]}: {res["c"]} || v {self.stopLimit:.8f} || ^ {self.softLimit:.8f}')
+				if count >= 5:
+					print(f"DB POLL")
+					db.pingTrade(self.trade)
+					count = 0
+				price = Decimal(res["c"])
+				if price <= self.stopLimit:
+					#Vende cagando leches
+					self.trade['sellPrice'] = price
+					self.trade['baseProfit'] = (self.trade["qty"]*price)-self.trade["baseQty"]
+					self.trade['closeTime'] = datetime.now()
+					db.closeTrade(self.trade)
+					print(f'{res["s"]}: {res["c"]} || v {self.stopLimit:.8f} || CERRADO!!')
+					break
+				elif price >= self.softLimit:
+					print(f'{res["s"]}: {res["c"]} || ^ {self.softLimit:.8f} || SOFT LIMIT UP')
+					self.setLimits(self.softLimit)
+		await client.close_connection()
+		'''try:
 			price = Decimal(msg["c"])
 			print(f"{self.trade['symbol']} -- {self.stopLimit} -- {price} -- {self.softLimit}")
 			if price <= self.stopLimit:
@@ -108,22 +139,20 @@ class TSLexit(Worker):
 		except KeyError or TypeError or SSLError:
 			print("Error1")
 		except OperationalError:
-			print("Error2")
+			print("Error2")'''
 	def startWork(self):
 		#Pregunta si hay pares desatendidos en trading #! funcion! db? Si, ademas es una metrica importante.
 		self.trade = db.isTradeUnattended(self.work, timedelta(seconds=30))
-		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
-		self.twm.start()
 		while True:
 			if self.trade != None:
-				db.pingTrade(self.trade)
-				self.setLimits(Decimal(self.trade["price"]))
-				self.socketName = self.twm.start_symbol_ticker_socket(callback=self.loop, symbol=self.trade["symbol"])
-				#self.twm.join()
+				aloop = asyncio.get_event_loop()
+				aloop.run_until_complete(self.loop())
+				print("Termina la monitorizacion")
+				self.trade = None
 			else:
 				print("No trades need TSL monitoring")
 				sleep(30)
-				self.unattended = db.isTradeUnattended(self.work, timedelta(seconds=30))
+				self.trade = db.isTradeUnattended(self.work, timedelta(seconds=30))
 
 		#Descarga el par que sobrepase el thresold de supervision (7s) y comienza la monitorizacion
 		#La monitorizacion 

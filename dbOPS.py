@@ -139,6 +139,7 @@ class DB:
 			Uexceptions.ReadTimeoutError, Rexceptions.ReadTimeout):
 			kline = []
 			print(f"--> Connection reset, skipping")
+			conn.close()
 		if len(kline) > 0:
 			for candle in kline:
 				query = f"INSERT INTO `data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`, `macd`, `sig`, `histogram`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}', NULL, NULL, NULL);"
@@ -566,6 +567,7 @@ class DB:
 		configDict = {}
 		for configSet in cur:
 			configDict[configSet[1]] = configSet[2]
+		conn.close()
 		return configDict
 	def setConfig(self, user, key, val):
 		try:
@@ -589,11 +591,11 @@ class DB:
 		cur.execute(query)
 		for point in cur:
 			try:
+				self.conn.close()
 				return int(point[0])
 			except:
-				return 0
-			finally:
 				self.conn.close()
+				return 0
 	def openTrade(self, tradeDict):
 		try:
 			conn = mariadb.connect(
@@ -616,11 +618,11 @@ class DB:
 		cur.execute(query)
 		for point in cur:
 			try:
+				self.conn.close()
 				return bool(point[0])
 			except:
-				return False
-			finally:
 				self.conn.close()
+				return False
 	def isTradeUnattended(self, exitType, thresold):
 		cur = self.tryConnect()
 		now = datetime.now()
@@ -642,9 +644,9 @@ class DB:
 		try:
 			cur.execute(query)
 			self.conn.commit()
+			self.conn.close()
 		except mariadb.OperationalError:
 			print("Operational Fail, HAZ ALGOOOOO")
-		finally:
 			self.conn.close()
 	def closeTrade(self, trade):
 		cur = self.tryConnect()
@@ -669,7 +671,11 @@ class DB:
 			self.conn.close()
 			print("Eliminando ABIERTO")
 		else:
-			pass
+			query = f"DELETE FROM trading WHERE symbol = '{trade['symbol']}'"
+			cur.execute(query)
+			self.conn.commit()
+			self.conn.close()
+			print("Eliminando ABIERTO")
 
 if __name__ == "__main__":
 	db1 = DB()
