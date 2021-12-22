@@ -11,4 +11,4 @@ Copy-Item -r C:\Users\David\GitHub\BinanceProject\code \\wsl$\docker-desktop-dat
 
 #Despliegue simple/despliegue con escalado estandar
 #docker compose -f dev.yml -p dev up -d
-docker compose -f dev.yml -p dev up -d --scale tslexit=10
+docker compose -f dev.yml -p dev up -d

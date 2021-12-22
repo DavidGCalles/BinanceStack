@@ -105,6 +105,7 @@ class DB:
 				)
 		except mariadb.Error as e:
 				print(f"Error connecting to MariaDB Platform: {e}")
+		self.conn.autocommit = False
 		return self.conn.cursor()
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), limit = 100):
 		#! Determina las cuestiones horarias (UTC) del funcionamiento y explicalas!!!!
@@ -138,6 +139,7 @@ class DB:
 			Uexceptions.ReadTimeoutError, Rexceptions.ReadTimeout):
 			kline = []
 			print(f"--> Connection reset, skipping")
+			conn.close()
 		if len(kline) > 0:
 			for candle in kline:
 				query = f"INSERT INTO `data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`, `macd`, `sig`, `histogram`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}', NULL, NULL, NULL);"
@@ -565,6 +567,7 @@ class DB:
 		configDict = {}
 		for configSet in cur:
 			configDict[configSet[1]] = configSet[2]
+		conn.close()
 		return configDict
 	def setConfig(self, user, key, val):
 		try:
@@ -582,17 +585,30 @@ class DB:
 		cur.execute(query)
 		conn.commit()
 		conn.close()
+	def getOpenTrades(self):
+		cur = self.tryConnect()
+		query = f"SELECT * FROM trading"
+		cur.execute(query)
+		fieldNames = ["openTime", "symbol","entryStra","exitStra","qty","price","baseQty","lastCheck"]
+		parsed = []
+		for point in cur:
+			try:
+				parsed.append(parseSQLtoDict(fieldNames, point))
+			except:
+				parsed.append([])
+		self.conn.close()
+		return parsed
 	def getOpenTradeCount(self):
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM trading"
 		cur.execute(query)
 		for point in cur:
 			try:
+				self.conn.close()
 				return int(point[0])
 			except:
-				return 0
-			finally:
 				self.conn.close()
+				return 0
 	def openTrade(self, tradeDict):
 		try:
 			conn = mariadb.connect(
@@ -605,7 +621,7 @@ class DB:
 		except mariadb.Error as e:
 			print(f"Error connecting to MariaDB Platform: {e}")
 		cur = conn.cursor()
-		query = f"INSERT INTO trading (openTime, symbol, entryStra, exitStra, qty, price, baseQty) VALUES ('{tradeDict['openTime']}','{tradeDict['symbol']}','{tradeDict['entry']}','{tradeDict['exit']}','{tradeDict['qty']}','{tradeDict['price']}','{tradeDict['baseQty']}')"
+		query = f"INSERT INTO trading (openTime, symbol, entryStra, exitStra, qty, price, baseQty, lastCheck) VALUES ('{tradeDict['openTime']}','{tradeDict['symbol']}','{tradeDict['entry']}','{tradeDict['exit']}','{tradeDict['qty']}','{tradeDict['price']}','{tradeDict['baseQty']}','{datetime.now()}')"
 		cur.execute(query)
 		conn.commit()
 		conn.close()
@@ -615,21 +631,15 @@ class DB:
 		cur.execute(query)
 		for point in cur:
 			try:
+				self.conn.close()
 				return bool(point[0])
 			except:
-				return False
-			finally:
 				self.conn.close()
+				return False
 	def isTradeUnattended(self, exitType, thresold):
 		cur = self.tryConnect()
 		now = datetime.now()
-		query = f"SELECT * FROM trading WHERE lastCheck IS NULL AND exitStra = '{exitType}' ORDER BY openTime LIMIT 1"
-		cur.execute(query)
-		for trade in cur:
-			fieldNames = ["openTime", "symbol", "entryStra", "exitStra", "qty", "price", "baseQty", "lastCheck"]
-			self.conn.close()
-			return parseSQLtoDict(fieldNames, trade)
-		query = f"SELECT * FROM trading WHERE exitStra = '{exitType}' ORDER BY lastCheck LIMIT 1"
+		query = f"SELECT * FROM trading WHERE exitStra = '{exitType}' ORDER BY lastCheck LIMIT 1 FOR UPDATE SKIP LOCKED"
 		cur.execute(query)
 		for trade in cur:
 			fieldNames = ["openTime", "symbol", "entryStra", "exitStra", "qty", "price", "baseQty", "lastCheck"]
@@ -644,21 +654,41 @@ class DB:
 	def pingTrade(self, trade):
 		cur = self.tryConnect()
 		query = f"UPDATE trading SET lastCheck = '{datetime.now()}' WHERE symbol = '{trade['symbol']}'"
-		cur.execute(query)
-		self.conn.commit()
-		self.conn.close()
+		try:
+			cur.execute(query)
+			self.conn.commit()
+			self.conn.close()
+		except mariadb.OperationalError:
+			print("Operational Fail, HAZ ALGOOOOO")
+			self.conn.close()
 	def closeTrade(self, trade):
 		cur = self.tryConnect()
-		query = f"INSERT INTO traded (`openTime`, `symbol`, `entryStra`, `exitStra`, `qty`, `price`, `baseQty`, `closeTime`, `sellPrice`,`baseProfit`) VALUES ('{trade['openTime']}', '{trade['symbol']}', '{trade['entryStra']}', '{trade['exitStra']}','{trade['qty']}', '{trade['price']}', '{trade['baseQty']}', '{trade['closeTime']}', '{trade['sellPrice']}', '{trade['baseProfit']}');"
-		print(query)
+		query = f"SELECT COUNT(*) FROM traded WHERE openTime = '{trade['openTime']}' AND symbol = '{trade['symbol']}' AND qty = '{trade['qty']}'"
+		#print(query)
 		cur.execute(query)
-		self.conn.commit()
-		print("Insertando CIERRE")
-		query = f"DELETE FROM trading WHERE symbol = '{trade['symbol']}'"
-		cur.execute(query)
-		self.conn.commit()
-		self.conn.close()
-		print("Eliminando ABIERTO")
+		isClosed = False
+		for point in cur:
+			try:
+				isClosed =  bool(point[0])
+			except:
+				isClosed = False
+		if isClosed == False:
+			query = f"INSERT INTO traded (`openTime`, `symbol`, `entryStra`, `exitStra`, `qty`, `price`, `baseQty`, `closeTime`, `sellPrice`,`baseProfit`) VALUES ('{trade['openTime']}', '{trade['symbol']}', '{trade['entryStra']}', '{trade['exitStra']}','{trade['qty']}', '{trade['price']}', '{trade['baseQty']}', '{trade['closeTime']}', '{trade['sellPrice']}', '{trade['baseProfit']}');"
+			print(query)
+			cur.execute(query)
+			self.conn.commit()
+			print("Insertando CIERRE")
+			query = f"DELETE FROM trading WHERE symbol = '{trade['symbol']}'"
+			cur.execute(query)
+			self.conn.commit()
+			self.conn.close()
+			print("Eliminando ABIERTO")
+		else:
+			query = f"DELETE FROM trading WHERE symbol = '{trade['symbol']}'"
+			cur.execute(query)
+			self.conn.commit()
+			self.conn.close()
+			print("Eliminando ABIERTO")
 
 if __name__ == "__main__":
 	db1 = DB()
