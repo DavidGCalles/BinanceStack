@@ -585,6 +585,19 @@ class DB:
 		cur.execute(query)
 		conn.commit()
 		conn.close()
+	def getOpenTrades(self):
+		cur = self.tryConnect()
+		query = f"SELECT * FROM trading"
+		cur.execute(query)
+		fieldNames = ["openTime", "symbol","entryStra","exitStra","qty","price","baseQty","lastCheck"]
+		parsed = []
+		for point in cur:
+			try:
+				parsed.append(parseSQLtoDict(fieldNames, point))
+			except:
+				parsed.append([])
+		self.conn.close()
+		return parsed
 	def getOpenTradeCount(self):
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM trading"
