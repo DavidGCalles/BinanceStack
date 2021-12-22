@@ -85,6 +85,14 @@ class MACDentry(Worker):
 class TSLexit(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
+	def isUnattended(self, lastCheck, thresold):
+		if lastCheck != None:
+			if lastCheck <= datetime.now()-thresold:
+				return True
+			else:
+				return False
+		else:
+			return True
 	def setLimits(self,trade, price):
 		##No sirve para esta version
 		trade["softLimit"] = price+(price*Decimal("0.07"))
@@ -93,71 +101,45 @@ class TSLexit(Worker):
 			#print(f"message type: {msg['data']['c']}")
 			price = Decimal(msg['c'])
 			print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['stopLimit']}")
+			db.pingTrade(self.streams[msg['s']]["trade"])
 			if price >= self.streams[msg['s']]["trade"]["softLimit"]:
 				self.setLimits(self.streams[msg['s']]["trade"], price)
+				print(f"AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
 			elif price <= self.streams[msg['s']]["trade"]["stopLimit"]:
-				print("cerramos!")
 				self.streams[msg['s']]["trade"]["closeTime"] = datetime.now()
 				self.streams[msg['s']]["trade"]["sellPrice"] = price
 				self.streams[msg['s']]["trade"]["baseProfit"] = price- self.streams[msg['s']]["trade"]["price"]
+				print(f"CIERRE. {msg['s']} at {self.streams[msg['s']]['trade']['baseProfit']} benefit")
 				db.closeTrade(self.streams[msg['s']]["trade"])
 				self.twm.stop_socket(self.streams[msg['s']]["stream"])
-	'''def handle_socket_message(self,msg):
-		#print(f"message type: {msg['data']['c']}")
-		price = Decimal(msg['data']['c'])
-		print(f"{msg['data']['s']}: {msg['data']['c']} | {self.streams[msg['data']['s']]['trade']['softLimit']}| {self.streams[msg['data']['s']]['trade']['stopLimit']}")
-		if price >= self.streams[msg['data']['s']]["trade"]["softLimit"]:
-			self.setLimits(self.streams[msg['data']['s']]["trade"], price)
-		elif price <= self.streams[msg['data']['s']]["trade"]["stopLimit"]:
-			print("cerramos!")
-			self.streams[msg['data']['s']]["trade"]["closeTime"] = datetime.now()
-			self.streams[msg['data']['s']]["trade"]["sellPrice"] = price
-			self.streams[msg['data']['s']]["trade"]["baseProfit"] = price- self.streams[msg['data']['s']]["trade"]["price"]
-			db.closeTrade(self.streams[msg['data']['s']]["trade"])
-			self.twm.stop_socket(msg["stream"])'''
 	def startWork(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
 		self.trades = db.getOpenTrades()
-		self.reload = False
 		self.streams = {}
 		streamList = []
+		self.lastCheck = datetime.now()
 		for trade in self.trades:
 			self.setLimits(trade, trade["price"])
 			self.streams[trade["symbol"]] = {}
 			self.streams[trade["symbol"]]["trade"] = trade
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
-			#streamList.append(trade["symbol"].lower()+"@ticker")
-		#self.twm.start_multiplex_socket(callback=self.handle_socket_message, streams=streamList)
-		#sleep(10)
-		#self.twm.stop_client()
-		#sleep(10)
-		#print("Reawaking")
-		#print(self.twm)
-		#twm.join()
-		#print("SEGUIMOS!")
-		#print(self.trades)
-		'''while True:
-			if self.reload == True:
-				self.twm.stop()
-				self.trades = db.getOpenTrades()
-				self.streams = {}
-				streamList = []
-				for trade in self.trades:
-					self.setLimits(trade, trade["price"])
-					self.streams[trade["symbol"]] = {}
-					self.streams[trade["symbol"]]["trade"] = trade
-					#self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
-					streamList.append(trade["symbol"].lower()+"@ticker")
-				self.twm.start()
-				self.twm.start_multiplex_socket(callback=self.handle_socket_message, streams=streamList)
-			else:
-				print("No trades need TSL monitoring")
-				sleep(30)
-				self.trade = db.isTradeUnattended(self.work, timedelta(seconds=30))
-
-		#Descarga el par que sobrepase el thresold de supervision (7s) y comienza la monitorizacion
-		#La monitorizacion'''
+		sleep(10)
+		while True:
+			if self.lastCheck <= datetime.now()-timedelta(seconds=30):
+				newtrades = db.getOpenTrades()
+				self.lastCheck = datetime.now()
+				print("Checking Unattended")
+				for trade in newtrades:
+					if self.isUnattended(trade["lastCheck"], timedelta(seconds=30)):
+						try:
+							self.twm.stop_socket(self.streams[trade["symbol"]]["stream"])
+						except:
+							print("Error cerrando el socket")
+						self.setLimits(trade, trade["price"])
+						self.streams[trade["symbol"]] = {}
+						self.streams[trade["symbol"]]["trade"] = trade
+						self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
 
 if __name__ == "__main__":
 	##argv1 = USER/test
