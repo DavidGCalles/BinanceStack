@@ -100,7 +100,7 @@ class TSLexit(Worker):
 	def handle_socket_message(self,msg):
 			#print(f"message type: {msg['data']['c']}")
 			price = Decimal(msg['c'])
-			print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['stopLimit']}")
+			#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['stopLimit']}")
 			db.pingTrade(self.streams[msg['s']]["trade"])
 			if price >= self.streams[msg['s']]["trade"]["softLimit"]:
 				self.setLimits(self.streams[msg['s']]["trade"], price)
@@ -129,7 +129,7 @@ class TSLexit(Worker):
 			if self.lastCheck <= datetime.now()-timedelta(seconds=30):
 				newtrades = db.getOpenTrades()
 				self.lastCheck = datetime.now()
-				print("Checking Unattended")
+				#print("Checking Unattended")
 				for trade in newtrades:
 					if self.isUnattended(trade["lastCheck"], timedelta(seconds=30)):
 						try:

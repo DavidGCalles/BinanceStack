@@ -83,6 +83,7 @@ services:
   tslexit:
     build:
       dockerfile: workerDev
+    restart: always
     command: code/procedimiento.py david TSL
     depends_on:
       - mariadb
