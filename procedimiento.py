@@ -117,7 +117,6 @@ class TSLexit(Worker):
 		self.twm.start()
 		self.trades = db.getOpenTrades()
 		self.streams = {}
-		streamList = []
 		self.lastCheck = datetime.now()
 		for trade in self.trades:
 			self.setLimits(trade, trade["price"])
