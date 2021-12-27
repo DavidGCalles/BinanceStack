@@ -85,6 +85,7 @@ class MACDentry(Worker):
 class TSLexit(Worker):
 	def __init__(self, user, workType):
 		super().__init__(user, workType)
+		self.pingInterval = timedelta(seconds=10)
 	def isUnattended(self, lastCheck, thresold):
 		if lastCheck != None:
 			if lastCheck <= datetime.now()-thresold:
@@ -101,7 +102,12 @@ class TSLexit(Worker):
 			#print(f"message type: {msg['data']['c']}")
 			price = Decimal(msg['c'])
 			#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['stopLimit']}")
-			db.pingTrade(self.streams[msg['s']]["trade"])
+			try:
+				if self.streams[msg['s']]["lastCheck"] == None or self.streams[msg['s']]["lastCheck"] <= datetime.now()-self.pingInterval:
+					db.pingTrade(self.streams[msg['s']]["trade"])
+					self.streams[msg['s']]["lastCheck"] = datetime.now()
+			except KeyError:
+				print(self.streams[msg['s']])
 			if price >= self.streams[msg['s']]["trade"]["softLimit"]:
 				self.setLimits(self.streams[msg['s']]["trade"], price)
 				print(f"AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
@@ -117,16 +123,17 @@ class TSLexit(Worker):
 		self.twm.start()
 		self.trades = db.getOpenTrades()
 		self.streams = {}
-		streamList = []
 		self.lastCheck = datetime.now()
 		for trade in self.trades:
 			self.setLimits(trade, trade["price"])
 			self.streams[trade["symbol"]] = {}
 			self.streams[trade["symbol"]]["trade"] = trade
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
+			self.streams[trade["symbol"]]["lastCheck"] = None
 		sleep(10)
 		while True:
 			if self.lastCheck <= datetime.now()-timedelta(seconds=30):
+				print("Checking Unattended")
 				newtrades = db.getOpenTrades()
 				self.lastCheck = datetime.now()
 				#print("Checking Unattended")
@@ -140,6 +147,7 @@ class TSLexit(Worker):
 						self.streams[trade["symbol"]] = {}
 						self.streams[trade["symbol"]]["trade"] = trade
 						self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
+						self.streams[trade["symbol"]]["lastCheck"] = None
 
 if __name__ == "__main__":
 	##argv1 = USER/test
