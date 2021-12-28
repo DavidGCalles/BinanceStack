@@ -654,11 +654,14 @@ class DB:
 	def updateTrade(self, symbol, key, value):
 		cur = self.tryConnect()
 		if type(key) == list:
-			query = f"UPDATE trading SET "
-			for ind, k in key:
-				bit = f"{k} = '{value[ind]}'"
+			query = f"UPDATE trading SET"
+			for ind, k in enumerate(key):
+				if ind == 0:
+					bit = f" {k} = '{value[ind]}'"
+				else:
+					bit = f", {k} = '{value[ind]}'"
 				query += bit
-			query += bit
+			query += f" WHERE symbol = '{symbol}'"
 			print(query)
 		else:
 			query = f"UPDATE trading SET {key} = '{value}' WHERE symbol = '{symbol}'"
