@@ -662,7 +662,7 @@ class DB:
 					bit = f", {k} = '{value[ind]}'"
 				query += bit
 			query += f" WHERE symbol = '{symbol}'"
-			print(query)
+			#print(query)
 		else:
 			query = f"UPDATE trading SET {key} = '{value}' WHERE symbol = '{symbol}'"
 		try:
