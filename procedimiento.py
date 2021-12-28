@@ -97,10 +97,10 @@ class TSLexit(Worker):
 	def setLimits(self,trade, price):
 		##No sirve para esta version
 		trade["softLimit"] = price+(price*Decimal("0.07"))
-		trade["stopLimit"] = price-(price*Decimal("0.05"))
+		trade["softStop"] = price-(price*Decimal("0.05"))
 		db.updateTrade(trade["symbol"],
 						["softLimit","softStop"],
-						[trade["softLimit"],trade["stopLimit"]])
+						[trade["softLimit"],trade["softStop"]])
 	def handle_socket_message(self,msg):
 			#print(f"message type: {msg['data']['c']}")
 			price = Decimal(msg['c'])
@@ -115,7 +115,7 @@ class TSLexit(Worker):
 			if price >= self.streams[msg['s']]["trade"]["softLimit"]:
 				self.setLimits(self.streams[msg['s']]["trade"], price)
 				print(f"AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
-			elif price <= self.streams[msg['s']]["trade"]["stopLimit"]:
+			elif price <= self.streams[msg['s']]["trade"]["softStop"]:
 				self.streams[msg['s']]["trade"]["closeTime"] = datetime.now()
 				self.streams[msg['s']]["trade"]["sellPrice"] = price
 				self.streams[msg['s']]["trade"]["baseProfit"] = price- self.streams[msg['s']]["trade"]["price"]
@@ -129,7 +129,6 @@ class TSLexit(Worker):
 		self.streams = {}
 		self.lastCheck = datetime.now()
 		for trade in self.trades:
-			self.setLimits(trade, trade["price"])
 			self.streams[trade["symbol"]] = {}
 			self.streams[trade["symbol"]]["trade"] = trade
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
