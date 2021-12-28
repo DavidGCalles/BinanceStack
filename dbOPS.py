@@ -589,7 +589,7 @@ class DB:
 		cur = self.tryConnect()
 		query = f"SELECT * FROM trading"
 		cur.execute(query)
-		fieldNames = ["openTime", "symbol","entryStra","exitStra","qty","price","baseQty","lastCheck"]
+		fieldNames = ["openTime", "symbol","entryStra","exitStra","qty","price","baseQty","softLimit","softStop","lastCheck"]
 		parsed = []
 		for point in cur:
 			try:
@@ -651,9 +651,20 @@ class DB:
 				self.conn.close()
 				return None
 		self.conn.close()
-	def pingTrade(self, trade):
+	def updateTrade(self, symbol, key, value):
 		cur = self.tryConnect()
-		query = f"UPDATE trading SET lastCheck = '{datetime.now()}' WHERE symbol = '{trade['symbol']}'"
+		if type(key) == list:
+			query = f"UPDATE trading SET"
+			for ind, k in enumerate(key):
+				if ind == 0:
+					bit = f" {k} = '{value[ind]}'"
+				else:
+					bit = f", {k} = '{value[ind]}'"
+				query += bit
+			query += f" WHERE symbol = '{symbol}'"
+			#print(query)
+		else:
+			query = f"UPDATE trading SET {key} = '{value}' WHERE symbol = '{symbol}'"
 		try:
 			cur.execute(query)
 			self.conn.commit()

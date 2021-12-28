@@ -98,13 +98,17 @@ class TSLexit(Worker):
 		##No sirve para esta version
 		trade["softLimit"] = price+(price*Decimal("0.07"))
 		trade["stopLimit"] = price-(price*Decimal("0.05"))
+		db.updateTrade(trade["symbol"],
+						["softLimit","softStop"],
+						[trade["softLimit"],trade["stopLimit"]])
 	def handle_socket_message(self,msg):
 			#print(f"message type: {msg['data']['c']}")
 			price = Decimal(msg['c'])
 			#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['stopLimit']}")
 			try:
 				if self.streams[msg['s']]["lastCheck"] == None or self.streams[msg['s']]["lastCheck"] <= datetime.now()-self.pingInterval:
-					db.pingTrade(self.streams[msg['s']]["trade"])
+					trade = self.streams[msg['s']]["trade"] 
+					db.updateTrade(trade["symbol"],"lastCheck", datetime.now())
 					self.streams[msg['s']]["lastCheck"] = datetime.now()
 			except KeyError:
 				print(self.streams[msg['s']])

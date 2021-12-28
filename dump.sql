@@ -45,6 +45,8 @@ CREATE TABLE IF NOT EXISTS `trading` (
   `qty` decimal(40,8) NOT NULL,
   `price` decimal(40,8) NOT NULL,
   `baseQty` decimal(40,8) NOT NULL,
+  `softLimit` decimal(40,8) NULL DEFAULT NULL,
+  `softStop` decimal(40,8) NULL DEFAULT NULL,
   `lastCheck` datetime NULL DEFAULT NULL) ENGINE='InnoDB';
 CREATE TABLE IF NOT EXISTS `traded` (
   `openTime` datetime NOT NULL,
