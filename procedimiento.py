@@ -78,7 +78,8 @@ class MACDentry(Worker):
 								#He recibido errores raros. Por eso el except. A ver si lo pillo.
 								last4h = df4h["histogram"].iat[-1]
 								prelast4h = df4h["histogram"].iat[-2]
-							except:
+							except Exception as err:
+								print(Exception, err)
 								print(f"{pair['symbol']}")
 								print("ERROR RARO!")
 								last4h = None
