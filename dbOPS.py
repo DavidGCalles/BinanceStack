@@ -142,7 +142,7 @@ class DB:
 			conn.close()
 		if len(kline) > 0:
 			for candle in kline:
-				query = f"INSERT INTO `data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`, `macd`, `sig`, `histogram`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}', NULL, NULL, NULL);"
+				query = f"INSERT INTO `data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}');"
 				#print(query)
 				cur.execute(query)
 				conn.commit()
