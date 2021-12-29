@@ -12,22 +12,22 @@ services:
       MYSQL_PASSWORD: binance
     volumes:
       - dbData:/var/lib/mysql
-#  prometheusagent:
-#    image: prom/mysqld-exporter
-#    ports:
-#      - 9104:9104
-#    depends_on:
-#      - mariadb
-#    environment:
-#      DATA_SOURCE_NAME: binance:binance@(mariadb:3306)/binance
-#  prometheus:
-#    build:
-#      dockerfile: prometheusImage.dockerfile
-#    ports:
-#      - 9090:9090
-#    depends_on:
-#      - mariadb
-#      - prometheusagent
+  prometheusagent:
+    image: prom/mysqld-exporter
+    ports:
+      - 9104:9104
+    depends_on:
+      - mariadb
+    environment:
+      DATA_SOURCE_NAME: binance:binance@(mariadb:3306)/binance
+  prometheus:
+    build:
+      dockerfile: prometheusImage.dockerfile
+    ports:
+      - 9090:9090
+    depends_on:
+      - mariadb
+      - prometheusagent
   grafana:
     image: grafana/grafana
     environment:
