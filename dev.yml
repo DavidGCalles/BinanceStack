@@ -71,15 +71,15 @@ services:
 #      - dbworker
 #    volumes:
 #      - code:/var/www/html
-#  macdentry:
-#    build:
-#      dockerfile: workerDev
-#    command: code/procedimiento.py david MACDentry
-#    depends_on:
-#      - mariadb
-#      - dbworker
-#    volumes:
-#      - code:/var/www/html
+  macdentry:
+    build:
+      dockerfile: workerDev
+    command: code/procedimiento.py david MACDentry
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
   tslexit:
     build:
       dockerfile: workerDev

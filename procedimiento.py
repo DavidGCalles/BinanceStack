@@ -38,6 +38,24 @@ class MACDentry(Worker):
 			df ([type]): [description]
 		"""
 		pass
+	def calculate(self, df):
+		#print(f'Calculating data from {symbol} in db at interval {interval}')
+		#print(df.to_string())
+		if df.empty == False:
+			try:
+				macd = ta.macd(close=df["close"], fast=12, slow=26, signal=9, append=True)
+				#print(macd.to_string())
+				df["macd"] = macd["MACD_12_26_9"]
+				df["sig"] = macd["MACDs_12_26_9"]
+				df["histogram"] = macd["MACDh_12_26_9"]
+				return df
+			except TypeError as err:
+				print(TypeError,err)
+				print(df)
+				return df
+		else:
+			print("Dataframe Vacio, saltando")
+			return df
 	def startWork(self):
 		"""Funcion que ejecuta el loop de entrada y valida los datos de la base de datos.
 		"""
@@ -51,6 +69,7 @@ class MACDentry(Worker):
 					if db.isTradeOpen(pair["symbol"]) == False:
 						#Solicitamos el dataframe correspondiente
 						df4h = db.getDataFrame(pair["symbol"], "4h")
+						df4h = self.calculate(df4h)
 						if df4h.empty == True:
 							#El dataframe puede estar vacio, primera validacion.
 							pass
