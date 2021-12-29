@@ -267,7 +267,7 @@ class DB:
 		cur = conn.cursor()
 		query = f"SELECT * FROM data_{intervalData} WHERE symbol = '{symbol}' ORDER BY openTime ASC"
 		pdQuery = pd.read_sql_query(query, conn)
-		df = pd.DataFrame(pdQuery, columns=["openTime","symbol","open","high","low","close", "macd", "sig", "histogram"])
+		df = pd.DataFrame(pdQuery, columns=["openTime","symbol","open","high","low","close"])
 		conn.close()
 		return df
 	def getSymbols(self):

@@ -23,20 +23,14 @@ CREATE TABLE IF NOT EXISTS `data_4h` (
   `open` DECIMAL(40,8) NOT NULL ,
   `high` DECIMAL(40,8) NOT NULL ,
   `low` DECIMAL(40,8) NOT NULL ,
-  `close` DECIMAL(40,8) NOT NULL ,
-  `macd` DECIMAL(40,8) NULL ,
-  `sig` DECIMAL(40,8) NULL ,
-  `histogram` DECIMAL(40,8) NULL ) ENGINE = InnoDB;
+  `close` DECIMAL(40,8) NOT NULL ) ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `data_1d` (
   `openTime` DATETIME NOT NULL ,
   `symbol` VARCHAR(50) NOT NULL ,
   `open` DECIMAL(40,8) NOT NULL ,
   `high` DECIMAL(40,8) NOT NULL ,
   `low` DECIMAL(40,8) NOT NULL ,
-  `close` DECIMAL(40,8) NOT NULL ,
-  `macd` DECIMAL(40,8) NULL ,
-  `sig` DECIMAL(40,8) NULL ,
-  `histogram` DECIMAL(40,8) NULL ) ENGINE = InnoDB;
+  `close` DECIMAL(40,8) NOT NULL ) ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `trading` (
   `openTime` datetime NOT NULL,
   `symbol` varchar(50) NOT NULL,
