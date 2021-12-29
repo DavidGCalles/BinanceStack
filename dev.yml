@@ -48,7 +48,7 @@ services:
   dbworker:
     build:
       dockerfile: workerDev
-    command: code/sistema.py david dbWorker
+    command: code/worker-symbolUpdater.py david
     depends_on:
       - mariadb
     volumes:
@@ -56,25 +56,16 @@ services:
   dbminer:
     build:
       dockerfile: workerDev
-    command: code/sistema.py david dbMiner
+    command: code/worker-miner.py david
     depends_on:
       - mariadb
       - dbworker
     volumes:
       - code:/var/www/html
-#  dbcalculator:
-#    build: 
-#      dockerfile: workerDev
-#    command: code/sistema.py david dbCalculator
-#    depends_on: 
-#      - mariadb
-#      - dbworker
-#    volumes:
-#      - code:/var/www/html
   macdentry:
     build:
       dockerfile: workerDev
-    command: code/procedimiento.py david MACDentry
+    command: code/entry-macd.py david
     depends_on:
       - mariadb
       - dbworker
@@ -84,7 +75,7 @@ services:
     build:
       dockerfile: workerDev
     restart: always
-    command: code/procedimiento.py david TSL
+    command: code/exit-tsl.py david
     depends_on:
       - mariadb
       - dbworker
