@@ -79,7 +79,8 @@ class TSLexit(Worker):
 							self.twm.stop_socket(self.streams[trade["symbol"]]["stream"])
 						except:
 							print("Error cerrando el socket")
-						self.setLimits(trade, trade["price"])
+						if trade["softLimit"] == None or trade["softStop"] == None:
+							self.setLimits(trade, trade["price"])
 						self.streams[trade["symbol"]] = {}
 						self.streams[trade["symbol"]]["trade"] = trade
 						self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
