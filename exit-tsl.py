@@ -29,7 +29,6 @@ class TSLexit(Worker):
 		else:
 			return True
 	def setLimits(self,trade, price):
-		##No sirve para esta version
 		trade["softLimit"] = price+(price*Decimal("0.07"))
 		trade["softStop"] = price-(price*Decimal("0.05"))
 		self.db.updateTrade(trade["symbol"],
@@ -38,7 +37,7 @@ class TSLexit(Worker):
 	def handle_socket_message(self,msg):
 			#print(f"message type: {msg['data']['c']}")
 			price = Decimal(msg['c'])
-			#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['stopLimit']}")
+			#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['softSpot']}")
 			try:
 				if self.streams[msg['s']]["lastCheck"] == None or self.streams[msg['s']]["lastCheck"] <= datetime.now()-self.pingInterval:
 					trade = self.streams[msg['s']]["trade"] 
@@ -46,7 +45,7 @@ class TSLexit(Worker):
 					self.streams[msg['s']]["lastCheck"] = datetime.now()
 			except KeyError:
 				print(self.streams[msg['s']])
-			if price >= self.streams[msg['s']]["trade"]["softLimit"]:
+			if price >= trade["softLimit"]:
 				self.setLimits(self.streams[msg['s']]["trade"], price)
 				print(f"AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
 			elif price <= self.streams[msg['s']]["trade"]["softStop"]:
