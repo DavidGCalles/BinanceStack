@@ -64,17 +64,18 @@ class TSLexit(Worker):
 		for trade in self.trades:
 			self.streams[trade["symbol"]] = {}
 			self.streams[trade["symbol"]]["trade"] = trade
+			print(f"Inicializando Socket: {trade['symbol']}")
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
 			self.streams[trade["symbol"]]["lastCheck"] = None
 		sleep(10)
 		while True:
 			if self.lastCheck <= datetime.now()-timedelta(seconds=30):
-				print("Checking Unattended")
+				#print(f"Tick: {datetime.now()}")
 				newtrades = self.db.getOpenTrades()
 				self.lastCheck = datetime.now()
-				#print("Checking Unattended")
 				for trade in newtrades:
 					if self.isUnattended(trade["lastCheck"], timedelta(seconds=30)):
+						print(f"Desatendidos: {trade}")
 						try:
 							self.twm.stop_socket(self.streams[trade["symbol"]]["stream"])
 						except:
