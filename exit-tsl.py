@@ -45,7 +45,7 @@ class TSLexit(Worker):
 					self.streams[msg['s']]["lastCheck"] = datetime.now()
 			except KeyError:
 				print(self.streams[msg['s']])
-			if price >= trade["softLimit"]:
+			if price >= self.streams[msg['s']]["trade"]["softLimit"]:
 				self.setLimits(self.streams[msg['s']]["trade"], price)
 				print(f"AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
 			elif price <= self.streams[msg['s']]["trade"]["softStop"]:
