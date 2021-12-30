@@ -588,16 +588,21 @@ class DB:
 	def getOpenTrades(self):
 		cur = self.tryConnect()
 		query = f"SELECT * FROM trading"
-		cur.execute(query)
-		fieldNames = ["openTime", "symbol","entryStra","exitStra","qty","price","baseQty","softLimit","softStop","lastCheck"]
-		parsed = []
-		for point in cur:
-			try:
-				parsed.append(parseSQLtoDict(fieldNames, point))
-			except:
-				parsed.append([])
-		self.conn.close()
-		return parsed
+		try:
+			cur.execute(query)
+			fieldNames = ["openTime", "symbol","entryStra","exitStra","qty","price","baseQty","softLimit","softStop","lastCheck"]
+			parsed = []
+			for point in cur:
+				try:
+					parsed.append(parseSQLtoDict(fieldNames, point))
+				except:
+					parsed.append([])
+			self.conn.close()
+			return parsed
+		except mariadb.InterfaceError:
+			## DO SOME LOGGING HERE!
+			self.conn.close()
+			return []
 	def getOpenTradeCount(self):
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM trading"
