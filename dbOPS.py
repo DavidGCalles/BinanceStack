@@ -599,10 +599,17 @@ class DB:
 					parsed.append([])
 			self.conn.close()
 			return parsed
-		except mariadb.InterfaceError:
+		except mariadb.InterfaceError as err:
 			## DO SOME LOGGING HERE!
+			print(f"{datetime.now()}, db.getOpenTrades, Imposible obtener trades")
+			print(mariadb.InterfaceError, err)
 			self.conn.close()
 			return []
+		except mariadb.ProgrammingError as err:
+			print(f"{datetime.now()}, db.getOpenTrades, Imposible obtener trades")
+			print(mariadb.ProgrammingError, err)
+			self.conn.close()
+			return[]
 	def getOpenTradeCount(self):
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM trading"
