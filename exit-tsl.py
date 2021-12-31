@@ -13,7 +13,6 @@ import pandas_ta as ta
 from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
 from binance.client import Client
 from dbOPS import DB
-from mariadb import OperationalError
 from workerBase import Worker
 
 class TSLexit(Worker):
@@ -35,6 +34,7 @@ class TSLexit(Worker):
 						["softLimit","softStop"],
 						[trade["softLimit"],trade["softStop"]])
 	def handle_socket_message(self,msg):
+		try:
 			#print(f"message type: {msg['data']['c']}")
 			price = Decimal(msg['c'])
 			#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['softSpot']}")
@@ -55,6 +55,9 @@ class TSLexit(Worker):
 				print(f"CIERRE. {msg['s']} at {self.streams[msg['s']]['trade']['baseProfit']} benefit")
 				self.db.closeTrade(self.streams[msg['s']]["trade"])
 				self.twm.stop_socket(self.streams[msg['s']]["stream"])
+		except SSLError as err:
+			print(f"{datetime.now()}, TSLexit.handle_socket_message, Error SSL")
+			print(SSLError, err)
 	def startWork(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
@@ -66,7 +69,6 @@ class TSLexit(Worker):
 			self.streams[trade["symbol"]]["trade"] = trade
 			print(f"Inicializando Socket: {trade['symbol']}")
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
-			self.streams[trade["symbol"]]["lastCheck"] = None
 		sleep(10)
 		while True:
 			if self.lastCheck <= datetime.now()-timedelta(seconds=30):
@@ -75,7 +77,7 @@ class TSLexit(Worker):
 				self.lastCheck = datetime.now()
 				for trade in newtrades:
 					if self.isUnattended(trade["lastCheck"], timedelta(seconds=30)):
-						print(f"Desatendidos: {trade}")
+						print(f"Desatendido: {trade['symbol']} | {trade['lastCheck']}")
 						try:
 							self.twm.stop_socket(self.streams[trade["symbol"]]["stream"])
 						except:
@@ -85,7 +87,6 @@ class TSLexit(Worker):
 						self.streams[trade["symbol"]] = {}
 						self.streams[trade["symbol"]]["trade"] = trade
 						self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
-						self.streams[trade["symbol"]]["lastCheck"] = None
 
 if __name__ == "__main__":
 	##Instantiate Class
