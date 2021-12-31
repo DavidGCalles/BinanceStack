@@ -674,8 +674,13 @@ class DB:
 			cur.execute(query)
 			self.conn.commit()
 			self.conn.close()
-		except mariadb.OperationalError:
-			print("Operational Fail, HAZ ALGOOOOO")
+		except mariadb.OperationalError as err:
+			print(f"{datetime.now()}, Imposible actualizar el trade {symbol}")
+			print(mariadb.OperationalError, err)
+			self.conn.close()
+		except mariadb.InterfaceError as err:
+			print(f"{datetime.now()}, Imposible actualizar el trade {symbol}")
+			print(mariadb.OperationalError, err)
 			self.conn.close()
 	def closeTrade(self, trade):
 		cur = self.tryConnect()
