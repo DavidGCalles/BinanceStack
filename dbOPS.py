@@ -680,7 +680,7 @@ class DB:
 			self.conn.close()
 		except mariadb.InterfaceError as err:
 			print(f"{datetime.now()}, Imposible actualizar el trade {symbol}")
-			print(mariadb.OperationalError, err)
+			print(mariadb.InterfaceError, err)
 			self.conn.close()
 	def closeTrade(self, trade):
 		cur = self.tryConnect()
