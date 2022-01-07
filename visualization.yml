@@ -1,0 +1,22 @@
+version: "3.8"
+
+services:
+  grafana:
+    image: grafana/grafana
+    environment:
+      GF_INSTALL_PLUGINS: ae3e-plotly-panel
+    ports:
+      - 3080:3000
+    volumes:
+      - grafanaConf:/var/lib/grafana
+    depends_on: 
+      - mariadb
+  adminer:
+    image: adminer
+    #restart: always
+    ports:
+      - 8070:8080
+    depends_on: 
+      - mariadb
+volumes:
+  grafanaConf:
