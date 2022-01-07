@@ -42,11 +42,11 @@ class MACDentry(Worker):
 				df["histogram"] = macd["MACDh_12_26_9"]
 				return df
 			except TypeError as err:
-				print(TypeError,err)
-				print(df)
+				#print(TypeError,err)
+				#print(df)
 				return df
 		else:
-			print("Dataframe Vacio, saltando")
+			#print("Dataframe Vacio, saltando")
 			return df
 	def startWork(self):
 		"""Funcion que ejecuta el loop de entrada y valida los datos de la base de datos.
@@ -60,22 +60,23 @@ class MACDentry(Worker):
 					#Comprobamos si hay trade abierto o no.
 					if self.db.isTradeOpen(pair["symbol"]) == False:
 						#Solicitamos el dataframe correspondiente
-						df4h = self.db.getDataFrame(pair["symbol"], "4h")
-						df4h = self.calculate(df4h)
+						df4h = self.calculate(self.db.getDataFrame(pair["symbol"], "4h"))
 						if df4h.empty == True:
-							#El dataframe puede estar vacio, primera validacion.
+							#El dataframe puede estar vacio, o los datos mal formados o #######no se ha podido realizar el calculo.
 							pass
 						else:
 							try:
 								#He recibido errores raros. Por eso el except. A ver si lo pillo.
 								last4h = df4h["histogram"].iat[-1]
 								prelast4h = df4h["histogram"].iat[-2]
+								print(f"{pair['symbol']}\n{prelast4h}\n{last4h}")
 							except Exception as err:
-								print(Exception, err)
+								'''print(Exception, err)
 								print(f"{pair['symbol']}")
 								print("ERROR RARO!")
 								last4h = None
-								print(df4h)
+								print(df4h)'''
+								pass
 							# Aqui terminan las estructuras de control y empieza el algoritmo propiamente dicho.
 							if last4h is not None and prelast4h is not None: 
 								if prelast4h < 0:
