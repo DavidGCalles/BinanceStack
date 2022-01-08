@@ -42,6 +42,7 @@ class Worker:
 			self.db.setConfig(self.user, self.requiried[2], str(20))
 	def _setupWideConfig(self):
 		try:
+			#!MUY IMPORTANTE!
 			self.realTrades = bool(self.config[self.wide[0]]) #Variable para determinar paper/real trading.
 		except KeyError:
 			self.realTrades = False
