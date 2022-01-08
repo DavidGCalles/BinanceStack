@@ -21,6 +21,4 @@ services:
     volumes:
       - code:/var/www/html
 volumes:
-  dbData:
-  grafanaConf:
   code:
