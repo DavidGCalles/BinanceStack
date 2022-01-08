@@ -67,9 +67,13 @@ class MACDentry(Worker):
 						else:
 							try:
 								#He recibido errores raros. Por eso el except. A ver si lo pillo.
-								last4h = df4h["histogram"].iat[-1]
-								prelast4h = df4h["histogram"].iat[-2]
-								print(f"{pair['symbol']}\n{prelast4h}\n{last4h}")
+								relevant4h = [df4h["histogram"].iat[-2],df4h["histogram"].iat[-1]]
+								
+								df1d = self.calculate(self.db.getDataFrame(pair["symbol"], "1d"))
+								if df1d.empty == True:
+									pass
+								else:
+									relevant1d = [df1d["histogram"].iat[-2],df1d["histogram"].iat[-1]]
 							except Exception as err:
 								'''print(Exception, err)
 								print(f"{pair['symbol']}")
@@ -78,9 +82,10 @@ class MACDentry(Worker):
 								print(df4h)'''
 								pass
 							# Aqui terminan las estructuras de control y empieza el algoritmo propiamente dicho.
-							if last4h is not None and prelast4h is not None: 
-								if prelast4h < 0:
-									if last4h > 0:
+							if relevant4h != [None, None] and relevant1d != [None, None]: 
+								if relevant4h[0] <= 0 and relevant4h[1] > 0:
+									print(f"{pair['symbol']} 4h\n{relevant4h[0]}\n{relevant4h[1]}\n{pair['symbol']} 1d\n{relevant1d[0]}\n{relevant1d[1]}")
+									if relevant1d[0] < relevant1d[1]:
 										price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
 										tradeDict = {"pair": pair,
 													"symbol": pair["symbol"],

@@ -10,15 +10,15 @@ services:
       - dbworker
     volumes:
       - code:/var/www/html
-  #tslexit:
-    #build:
-      #dockerfile: workerDev
-    #restart: always
-    #command: code/exit-tsl.py david
-    #depends_on:
-      #- mariadb
-      #- dbworker
-    #volumes:
-      #- code:/var/www/html
+  tslexit:
+    build:
+      dockerfile: workerDev
+    restart: always
+    command: code/exit-tsl.py david
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
 volumes:
   code:
