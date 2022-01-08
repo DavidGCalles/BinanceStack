@@ -3,7 +3,7 @@ version: "3.8"
 services:
   mariadb:
     build:
-      dockerfile: mariaImage
+      dockerfile: mariaImage.dockerfile
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: example
@@ -12,42 +12,91 @@ services:
       MYSQL_PASSWORD: binance
     volumes:
       - dbData:/var/lib/mysql
+  #prometheus_sql:
+    #image: prom/mysqld-exporter
+    #ports:
+      #- 9104:9104
+    #depends_on:
+      #- mariadb
+    #environment:
+      #DATA_SOURCE_NAME: binance:binance@(mariadb:3306)/binance
+  #prometheus:
+    #build:
+      #dockerfile: prometheusImage.dockerfile
+    #ports:
+      #- 9090:9090
+    #depends_on:
+      #- mariadb
+      #- prometheusagent
+  ####FALTA POR CONFIGURAR ELASTICHSEARCH. NO LO DESCOMENTES SI NO SABES LIMITAR LA RAM O TIENES UN SUPER ORDENADOR
+  #es01:
+      #image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+      #container_name: es01
+      #environment:
+        #discovery.type: "single-node"
+      #ulimits:
+        #memlock:
+          #soft: -1
+          #hard: -1
+      #volumes:
+        #- dataES:/usr/share/elasticsearch/data
+      #ports:
+        #- 9200:9200
   grafana:
     image: grafana/grafana
     environment:
       GF_INSTALL_PLUGINS: ae3e-plotly-panel
     ports:
-      - 3000:3000
+      - 3090:3000
     volumes:
       - grafanaConf:/var/lib/grafana
     depends_on: 
       - mariadb
   adminer:
     image: adminer
+    #restart: always
     ports:
       - 8080:8080
     depends_on: 
       - mariadb
-  dbworker:
-    image: omadevs/worker:0.0.2
-    restart: always
-    command: sistema.py david dbWorker
+  symbolupdater:
+    build:
+      dockerfile: workerDev.dockerfile
+    command: code/worker-symbolUpdater.py david
     depends_on:
       - mariadb
-  dbminer:
-    image: omadevs/worker:0.0.2
-    #restart: always
-    command: sistema.py david dbMiner
+    volumes:
+      - code:/var/www/html
+  dataminer:
+    build:
+      dockerfile: workerDev.dockerfile
+    command: code/worker-miner.py david
     depends_on:
       - mariadb
       - dbworker
-#  dbcalculator:
-#    build: 
-#      dockerfile: worker
-#    command: code/sistema.py david dbCalculator
-#    depends_on: 
-#      - mariadb
-#      - dbworker
+    volumes:
+      - code:/var/www/html
+  macdentry:
+    build:
+      dockerfile: workerDev.dockerfile
+    command: code/entry-macd.py david
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
+  tslexit:
+    build:
+      dockerfile: workerDev.dockerfile
+    restart: always
+    command: code/exit-tsl.py david
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - code:/var/www/html
 volumes:
-  grafanaConf:
   dbData:
+  dataES:
+  grafanaConf:
+  code:
