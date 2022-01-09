@@ -28,19 +28,17 @@ services:
     depends_on:
       - mariadb
       #- prometheusagent
-  #es01:
-      #image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
-      #container_name: es01
-      #environment:
-        #discovery.type: "single-node"
-      #ulimits:
-        #memlock:
-          #soft: -1
-          #hard: -1
-      #volumes:
-        #- dataES:/usr/share/elasticsearch/data
-      #ports:
-        #- 9200:9200
+  es01:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+      container_name: es01
+      environment:
+        - "discovery.type=single-node"
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      mem_limit: 1g
+      volumes:
+        - dataES:/usr/share/elasticsearch/data
+      ports:
+        - 9200:9200
 volumes:
   dbData:
   dataES:
