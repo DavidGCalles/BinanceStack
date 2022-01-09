@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-#! FILENAME.py
+#! LA CLASE WHAT THE FUCK! 
 
 from datetime import datetime, timedelta
 
-from time import sleep
+from time import sleep #Melol
 
 class Timer:
 	def __init__(self, updateTime = timedelta(minutes=5)):
