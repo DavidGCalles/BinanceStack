@@ -58,37 +58,39 @@ class TSLexit(Worker):
 	def startWork(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
+		print(f"{datetime.now()}- Obteniendo trades abiertos")
 		self.trades = self.db.getOpenTrades()
 		self.streams = {}
 		self.lastCheck = datetime.now()
 		for trade in self.trades:
 			self.streams[trade["symbol"]] = {}
 			self.streams[trade["symbol"]]["trade"] = trade
-			print(f"Inicializando Socket: {trade['symbol']}")
+			print(f"{datetime.now()}- Inicializando Socket: {trade['symbol']}")
 			self.streams[trade["symbol"]]["db"] = DB()
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
-		print("Dando tiempo a los sockets a establecerse")
+		print(f"{datetime.now()}- Dando tiempo a los sockets a establecerse")
 		sleep(20)
-		print("Comenzando monitoreo de desatendidos.")
+		print(f"{datetime.now()}- Comenzando monitoreo de desatendidos.")
 		while True:
 			if self.lastCheck <= datetime.now()-timedelta(seconds=30): ## Aqui hay que usar self.interval
 				#print(f"Tick: {datetime.now()}")
-				newtrades = self.db.getOpenTrades()
+				#newtrades = self.db.getOpenTrades()
 				self.lastCheck = datetime.now()
-				for trade in newtrades:
+				for trade in self.trades:
 					if self.isUnattended(trade["lastCheck"], timedelta(seconds=30)): ##Thresold, ira a configuracion
-						print(f"Desatendido: {trade['symbol']} | {trade['lastCheck']}")
+						print(f"{datetime.now()}- Desatendido: {trade['symbol']} | {trade['lastCheck']}")
 						try:
 							self.twm.stop_socket(self.streams[trade["symbol"]]["stream"])
 						except:
-							print("Error cerrando el socket")
+							print(f"{datetime.now()}- Error cerrando el socket")
 						if trade["softLimit"] == None:
 							self.setLimits(trade, trade["price"])
 						self.streams[trade["symbol"]] = {}
 						self.streams[trade["symbol"]]["trade"] = trade
 						self.streams[trade["symbol"]]["db"] = DB()
-						print(f"Reiniciando socket: {trade['symbol']}")
+						print(f"{datetime.now()}- Reiniciando socket: {trade['symbol']}")
 						self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
+						print(f"{datetime.now()}- Socket Reiniciado")
 
 if __name__ == "__main__":
 	##Instantiate Class
