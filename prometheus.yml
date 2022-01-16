@@ -30,4 +30,4 @@ scrape_configs:
   follow_redirects: true
   static_configs:
     - targets:
-      - prometheusagent:9104
+      - prometheus_sql:9104
