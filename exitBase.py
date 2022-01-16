@@ -16,6 +16,13 @@ from dbOPS import DB
 from mariadb import OperationalError
 from sistema import Worker
 
+###LISTA DE COSAS QUE VAN EN EL EXITBASE
+#- ISUNATTENDED entera. Será de base para cualquier metodo.
+#-- la variable thresold va a configuracion. Es el margen en segundos por el cual se considera desatendido.
+#- self.pingInterval a configuracion. Es utilizado para limitar el ping que hacen los sockets.
+#- self.twm Pasa a init. 
+#- self.streams
+
 if __name__ == "__main__":
 	db = DB()
 	pass
