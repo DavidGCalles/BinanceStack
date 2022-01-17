@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  prometheus_sql:
+    image: prom/mysqld-exporter
+    ports:
+      - 9104:9104
+    depends_on:
+      - mariadb
+    environment:
+      DATA_SOURCE_NAME: binance:binance@(mariadb:3306)/binance
+  prometheus:
+    build:
+      dockerfile: prometheusImage.dockerfile
+    ports:
+      - 9090:9090
+    depends_on:
+      - mariadb

@@ -1,0 +1,34 @@
+version: "3.8"
+
+services:
+    elasticsearch:
+      image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
+      environment:
+        - "discovery.type=single-node"
+        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      mem_limit: 1g
+      volumes:
+        - dataES:/usr/share/elasticsearch/data
+      ports:
+        - 9200:9200
+  kibana:
+    image: docker.elastic.co/kibana/kibana:7.16.3
+    ports:
+      - 5601:5601
+    environment:
+      ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
+  #logstash:
+    #image: docker.elastic.co/logstash/logstash:7.16.3
+    #environment:
+      #- "LG_JAVA_OPTS= -Xms512m -Xmx512m"
+    #mem_limit: 1g
+    #volumes:
+      #- dataLG:/usr/share/logstash/pipeline/
+  filebeat:
+    image: docker.elastic.co/beats/filebeat:7.16.3
+    environment:
+      - "setup.kibana.host=localhost:5601"
+      - "output.elasticsearch.hosts=['localhost:9200']"
+volumes:
+  dataES:
+  dataLG:
