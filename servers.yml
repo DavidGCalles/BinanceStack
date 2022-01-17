@@ -27,7 +27,6 @@ services:
       - 9090:9090
     depends_on:
       - mariadb
-      #- prometheusagent
   elasticsearch:
       image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
       environment:
