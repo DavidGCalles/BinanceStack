@@ -28,9 +28,8 @@ services:
     depends_on:
       - mariadb
       #- prometheusagent
-  es01:
+  elasticsearch:
       image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
-      container_name: es01
       environment:
         - "discovery.type=single-node"
         - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
