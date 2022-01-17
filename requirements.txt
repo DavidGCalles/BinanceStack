@@ -2,3 +2,4 @@ python-binance
 mariadb
 pandas
 pandas-ta
+ecs-logging

@@ -10,6 +10,7 @@ from workerBase import Worker
 class dbWorker(Worker):
 	def __init__(self, user):
 		super().__init__(user, "dbWorker")
+		self.logger.info("Symbol Updater started")
 	def startWork(self):
 		while True:
 			if self.timer.tick() == True:

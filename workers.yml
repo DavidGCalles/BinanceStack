@@ -9,6 +9,7 @@ services:
       - mariadb
     volumes:
       - code:/var/www/html
+      - logs:/var/www/html/code/logs
   dataminer:
     build:
       dockerfile: workerDev.dockerfile
@@ -18,5 +19,7 @@ services:
       - dbworker
     volumes:
       - code:/var/www/html
+      - logs:/var/www/html/logs
 volumes:
   code:
+  logs:

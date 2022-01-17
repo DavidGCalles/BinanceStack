@@ -7,6 +7,9 @@ from sys import argv
 from time import sleep
 from timer import Timer
 
+import logging
+import ecs_logging
+
 from binance.client import Client
 from dbOPS import DB
 
@@ -22,6 +25,12 @@ class Worker:
 		self.wide = ["wide_realTrades", "wide_fiat", "wide_maxInv", "wide_maxTrades", "wide_baseCurrency"]
 		self._setupWorkConfig()
 		self._setupWideConfig()
+		#LOGGING
+		self.logger = logging.getLogger(self.work)
+		self.logger.setLevel(logging.DEBUG)
+		handler = logging.FileHandler(f"logs/{self.work}.json")
+		handler.setFormatter(ecs_logging.StdlibFormatter())
+		self.logger.addHandler(handler)
 	def _setupWorkConfig(self):
 		#Tantos bloques Try son para aislar cada configuracion. Si los uniese, la ausencia de una caracteristica haria que
 		# cada uno de los defaults se sobreescribiese.
