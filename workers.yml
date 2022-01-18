@@ -4,19 +4,21 @@ services:
   symbolupdater:
     build:
       dockerfile: workerDev.dockerfile
-    command: code/worker-symbolUpdater.py david
+    command: worker-symbolUpdater.py david
     depends_on:
       - mariadb
     volumes:
-      - code:/var/www/html
+      - .:/var/www/html
+      - logs:/var/www/html/logs
   dataminer:
     build:
       dockerfile: workerDev.dockerfile
-    command: code/worker-miner.py david
+    command: worker-miner.py david
     depends_on:
       - mariadb
       - dbworker
     volumes:
-      - code:/var/www/html
+      - .:/var/www/html
+      - logs:/var/www/html/logs
 volumes:
-  code:
+  logs:

@@ -12,31 +12,5 @@ services:
       MYSQL_PASSWORD: binance
     volumes:
       - dbData:/var/lib/mysql
-  prometheus_sql:
-    image: prom/mysqld-exporter
-    ports:
-      - 9104:9104
-    depends_on:
-      - mariadb
-    environment:
-      DATA_SOURCE_NAME: binance:binance@(mariadb:3306)/binance
-  prometheus:
-    build:
-      dockerfile: prometheusImage.dockerfile
-    ports:
-      - 9090:9090
-    depends_on:
-      - mariadb
-  elasticsearch:
-      image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
-      environment:
-        - "discovery.type=single-node"
-        - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      mem_limit: 1g
-      volumes:
-        - dataES:/usr/share/elasticsearch/data
-      ports:
-        - 9200:9200
 volumes:
   dbData:
-  dataES:

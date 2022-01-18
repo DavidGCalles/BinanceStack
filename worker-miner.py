@@ -11,6 +11,7 @@ from workerBase import Worker
 class dbMiner(Worker):
 	def __init__(self, user):
 		super().__init__(user, "dbMiner")
+		self.logger.info("Data Miner Started")
 		self.pointsNeeded = 54
 		self.interval4h = timedelta(hours=4)
 		self.interval1d = timedelta(days=1)
@@ -26,7 +27,7 @@ class dbMiner(Worker):
 			interval (STR): cadena equivalente a self.client.KLINE_INTERVAL_nX. Se utiliza para definir la tabla de
 				tiempos que usar, el timedelta adecuado para las solicitudes.
 		"""
-		print(f"Comprobando datos de: {symbol}")
+		self.logger.info(f"Comprobando datos locales.", extra={"symbol": symbol, "interval": interval})
 		if interval == "1d":
 			deltaInterval = self.interval1d
 		elif interval == "4h":
@@ -36,29 +37,32 @@ class dbMiner(Worker):
 		if len(lastPoint) == 0:
 			##Si el conteo de la tabla y simbolo concreto da como vacio, intentar obtener los maximos puntos necesarios obteniendo la fecha de inicio (dateStartObj)
 			dateStartObj = dateEnd-(deltaInterval*self.pointsNeeded)
+			self.logger.warning("No hay datos locales. Solicitando.", extra={"symbol": symbol, "interval": interval, "startPoint": str(dateStartObj)})
 			self.db.insertData(self.client, symbol, interval, str(dateStartObj), end = str(dateEnd), limit=self.pointsNeeded)
-			print(f"------> {interval}, vacia. Descargando datos completos desde {dateStartObj}")
 		else:
 			##Si la tabla tiene datos ya, seguir capturando a partir de esa fecha.
-			print(f"------> {interval}, contiene datos. Comprobando tiempo {lastPoint[0]}")
+			#print(f"------> {interval}, contiene datos. Comprobando tiempo {lastPoint[0]}")
 			if lastPoint[0] < dateEnd-deltaInterval:
-				print(f"---------> {interval}, obteniendo ultimos puntos")
+				self.logger.warning("Hay datos locales. Actualizando.", extra={"symbol": symbol, "interval": interval, "startPoint": str(lastPoint[0]+deltaInterval)})
+				#print(f"---------> {interval}, obteniendo ultimos puntos")
 				self.db.insertData(self.client,symbol, interval, str(lastPoint[0]+deltaInterval), end=str(dateEnd), limit=self.pointsNeeded)
 			else:
-				print(f"---------> {interval}, tabla actualizada.")
+				self.logger.info("Datos locales actualizados.", extra={"symbol": symbol, "interval": interval})
+				#print(f"---------> {interval}, tabla actualizada.")
 	def startWork(self):
 		self.timer.updateLastCheck(self.db.getOlderServe(self.work))
 		while True:
 			if self.timer.tick() == True:
-				print("Starting Task, Mining Data.")
-				print(f"Timer.lastCheck fetched from DB: {self.timer.lastCheck}")
+				self.log.info("Starting Mining Data.")
+				#print(f"Timer.lastCheck fetched from DB: {self.timer.lastCheck}")
 				pairs = self.db.servePairs(self.work, limit= self.batchSize)
 				for pair in pairs:
-					print(f"Checking {pair['symbol']}:")
-					print(f'---> Checking in db')
+					#print(f"Checking {pair['symbol']}:")
+					#print(f'---> Checking in db')
 					self._checkData(pair["symbol"], "4h")
 					self._checkData(pair["symbol"], "1d")
 				self.timer.updateLastCheck(self.db.getOlderServe(self.work))
+				self.log.info("Stoping Mining Data")
 			if self.configInterval.tick() == True:
 				self.refreshBasicConfigs()
 
@@ -69,4 +73,4 @@ if __name__ == "__main__":
 		##Do Work
 		task.startWork()
 	except:
-		print("Tarea terminada manualmente")
+		task.logger.warning("Tarea terminada manualmente")

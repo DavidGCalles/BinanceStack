@@ -7,6 +7,9 @@ from sys import argv
 from time import sleep
 from timer import Timer
 
+import logging
+import ecs_logging
+
 from binance.client import Client
 from dbOPS import DB
 
@@ -22,6 +25,12 @@ class Worker:
 		self.wide = ["wide_realTrades", "wide_fiat", "wide_maxInv", "wide_maxTrades", "wide_baseCurrency"]
 		self._setupWorkConfig()
 		self._setupWideConfig()
+		#LOGGING
+		self.logger = logging.getLogger(self.work)
+		self.logger.setLevel(logging.DEBUG)
+		handler = logging.FileHandler(f"logs/{self.work}.json")
+		handler.setFormatter(ecs_logging.StdlibFormatter())
+		self.logger.addHandler(handler)
 	def _setupWorkConfig(self):
 		#Tantos bloques Try son para aislar cada configuracion. Si los uniese, la ausencia de una caracteristica haria que
 		# cada uno de los defaults se sobreescribiese.
@@ -98,7 +107,7 @@ class Worker:
 		base = self._getBaseCurrency(pair["symbol"])
 		if base != None:
 			if base != self.fiat:
-				print(f"eurP assign: {base}{self.fiat}")
+				self.logger.debug(f"eurP assign: {base}{self.fiat}")
 				eurP = Decimal(self.client.get_symbol_ticker(symbol=f"{base}{self.fiat}")["price"]) #Precio en fiat de la moneda base
 			else:
 				eurP = act
@@ -125,7 +134,7 @@ class Worker:
 				'''msg = [f"stepCheck/notionalValue NOT PASSED"]'''
 				return [False, {}]
 	def refreshBasicConfigs(self):
-		print("Probing config in DB.")
+		self.logger.info("Probing config in DB.")
 		self.config = self.db.getConfig(self.user)
 		self.configInterval.updateTime = timedelta(minutes=int(self.config[self.requiried[0]]))
 		self.timer.updateTime = timedelta(minutes=int(self.config[self.requiried[1]]))
