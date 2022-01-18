@@ -4,21 +4,23 @@ services:
   macdentry:
     build:
       dockerfile: workerDev.dockerfile
-    command: code/entry-macd.py david
+    command: entry-macd.py david
     depends_on:
       - mariadb
       - dbworker
     volumes:
-      - code:/var/www/html
+      - .:/var/www/html
+      - logs:/var/www/html/logs
   tslexit:
     build:
       dockerfile: workerDev.dockerfile
     restart: always
-    command: code/exit-tsl.py david
+    command: exit-tsl.py david
     depends_on:
       - mariadb
       - dbworker
     volumes:
-      - code:/var/www/html
+      - .:/var/www/html
+      - logs:/var/www/html/logs
 volumes:
-  code:
+  logs:
