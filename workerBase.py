@@ -107,7 +107,7 @@ class Worker:
 		base = self._getBaseCurrency(pair["symbol"])
 		if base != None:
 			if base != self.fiat:
-				print(f"eurP assign: {base}{self.fiat}")
+				self.logger.debug(f"eurP assign: {base}{self.fiat}")
 				eurP = Decimal(self.client.get_symbol_ticker(symbol=f"{base}{self.fiat}")["price"]) #Precio en fiat de la moneda base
 			else:
 				eurP = act
@@ -134,7 +134,7 @@ class Worker:
 				'''msg = [f"stepCheck/notionalValue NOT PASSED"]'''
 				return [False, {}]
 	def refreshBasicConfigs(self):
-		print("Probing config in DB.")
+		self.logger.info("Probing config in DB.")
 		self.config = self.db.getConfig(self.user)
 		self.configInterval.updateTime = timedelta(minutes=int(self.config[self.requiried[0]]))
 		self.timer.updateTime = timedelta(minutes=int(self.config[self.requiried[1]]))

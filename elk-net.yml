@@ -1,7 +1,7 @@
 version: "3.8"
 
 services:
-    elasticsearch:
+  elasticsearch:
       image: docker.elastic.co/elasticsearch/elasticsearch:7.16.2
       environment:
         - "discovery.type=single-node"
@@ -26,9 +26,14 @@ services:
       #- dataLG:/usr/share/logstash/pipeline/
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.16.3
-    environment:
-      - "setup.kibana.host=localhost:5601"
-      - "output.elasticsearch.hosts=['localhost:9200']"
+    user: root
+    command: filebeat -e -strict.perms=false
+    volumes:
+      - "./filebeat.yml:/usr/share/filebeat/filebeat.yml:ro"
+      - "/var/lib/docker/containers:/var/lib/docker/containers:ro"
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - logs:/var/www/html/logs/
 volumes:
   dataES:
-  dataLG:
+  logs:
+  #dataLG:
