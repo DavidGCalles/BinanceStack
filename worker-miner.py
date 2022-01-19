@@ -11,7 +11,7 @@ from workerBase import Worker
 class dbMiner(Worker):
 	def __init__(self, user):
 		super().__init__(user, "dbMiner")
-		self.logger.info("Data Miner Started")
+		self.logger.info(f"Start {self.work}")
 		self.pointsNeeded = 54
 		self.interval4h = timedelta(hours=4)
 		self.interval1d = timedelta(days=1)
@@ -27,7 +27,7 @@ class dbMiner(Worker):
 			interval (STR): cadena equivalente a self.client.KLINE_INTERVAL_nX. Se utiliza para definir la tabla de
 				tiempos que usar, el timedelta adecuado para las solicitudes.
 		"""
-		self.logger.info(f"Comprobando datos locales.", extra={"symbol": symbol, "interval": interval})
+		self.logger.debug(f"Comprobando datos locales.", extra={"symbol": symbol, "interval": interval})
 		if interval == "1d":
 			deltaInterval = self.interval1d
 		elif interval == "4h":
@@ -43,17 +43,17 @@ class dbMiner(Worker):
 			##Si la tabla tiene datos ya, seguir capturando a partir de esa fecha.
 			#print(f"------> {interval}, contiene datos. Comprobando tiempo {lastPoint[0]}")
 			if lastPoint[0] < dateEnd-deltaInterval:
-				self.logger.warning("Hay datos locales. Actualizando.", extra={"symbol": symbol, "interval": interval, "startPoint": str(lastPoint[0]+deltaInterval)})
+				self.logger.info("Hay datos locales. Actualizando.", extra={"symbol": symbol, "interval": interval, "startPoint": str(lastPoint[0]+deltaInterval)})
 				#print(f"---------> {interval}, obteniendo ultimos puntos")
 				self.db.insertData(self.client,symbol, interval, str(lastPoint[0]+deltaInterval), end=str(dateEnd), limit=self.pointsNeeded)
 			else:
-				self.logger.info("Datos locales actualizados.", extra={"symbol": symbol, "interval": interval})
+				self.logger.debug("Datos locales actualizados.", extra={"symbol": symbol, "interval": interval})
 				#print(f"---------> {interval}, tabla actualizada.")
 	def startWork(self):
 		self.timer.updateLastCheck(self.db.getOlderServe(self.work))
 		while True:
 			if self.timer.tick() == True:
-				self.log.info("Starting Mining Data.")
+				self.logger.info("Start Mining", extra={"batchSize": self.batchSize})
 				#print(f"Timer.lastCheck fetched from DB: {self.timer.lastCheck}")
 				pairs = self.db.servePairs(self.work, limit= self.batchSize)
 				for pair in pairs:
@@ -62,7 +62,7 @@ class dbMiner(Worker):
 					self._checkData(pair["symbol"], "4h")
 					self._checkData(pair["symbol"], "1d")
 				self.timer.updateLastCheck(self.db.getOlderServe(self.work))
-				self.log.info("Stoping Mining Data")
+				self.logger.info("End Mining")
 			if self.configInterval.tick() == True:
 				self.refreshBasicConfigs()
 

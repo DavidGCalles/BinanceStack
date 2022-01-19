@@ -10,13 +10,13 @@ from workerBase import Worker
 class dbWorker(Worker):
 	def __init__(self, user):
 		super().__init__(user, "dbWorker")
-		self.logger.info("Symbol Updater started")
+		self.logger.info(f"Start {self.work}")
 	def startWork(self):
 		while True:
 			if self.timer.tick() == True:
-				self.logger.info("Starting Task. Updating Symbol Database.")
+				self.logger.info("Start Updating")
 				self.db.updateSymbols(self.client)
-				self.logger.info("Task End.")
+				self.logger.info("End Updating")
 			if self.configInterval.tick() == True:
 				self.refreshBasicConfigs()
 

@@ -134,7 +134,7 @@ class Worker:
 				'''msg = [f"stepCheck/notionalValue NOT PASSED"]'''
 				return [False, {}]
 	def refreshBasicConfigs(self):
-		self.logger.info("Probing config in DB.")
+		self.logger.debug("Probing Config")
 		self.config = self.db.getConfig(self.user)
 		self.configInterval.updateTime = timedelta(minutes=int(self.config[self.requiried[0]]))
 		self.timer.updateTime = timedelta(minutes=int(self.config[self.requiried[1]]))
