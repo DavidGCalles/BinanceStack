@@ -8,6 +8,9 @@ from ssl import SSLError
 from sys import argv
 from time import sleep
 
+import logging
+import ecs_logging
+
 import pandas as pd
 import pandas_ta as ta
 from binance import AsyncClient, BinanceSocketManager, ThreadedWebsocketManager
@@ -42,17 +45,23 @@ class TSLexit(Worker):
 			trade = self.streams[msg['s']]["trade"]
 			now = datetime.now()
 			self.streams[msg['s']]["db"].updateTrade(trade["symbol"],"lastCheck", now)
+			self.streams[msg['s']]["logger"].debug("Socket Ping", extra={"symbol":msg['s'], "price":price})
 			self.streams[msg['s']]["trade"]["lastCheck"] = now
 		if price >= self.streams[msg['s']]["trade"]["softLimit"]:
 			self.setLimits(self.streams[msg['s']]["trade"], price)
-			print(f"{now}- AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
+			#print(f"{now}- AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
+			self.streams[msg['s']]["logger"].warning("Limit Passed", extra={"symbol": msg["s"], "softLimit": self.streams[msg['s']]['trade']['softLimit'], "softStop": self.streams[msg['s']]['trade']['softStop']})
 		elif price <= self.streams[msg['s']]["trade"]["softStop"]:
 			self.streams[msg['s']]["trade"]["closeTime"] = now
 			self.streams[msg['s']]["trade"]["sellPrice"] = price
 			self.streams[msg['s']]["trade"]["baseProfit"] = price- self.streams[msg['s']]["trade"]["price"]
 			print(f"{now}- CIERRE. {msg['s']} at {self.streams[msg['s']]['trade']['baseProfit']} benefit")
 			self.streams[msg['s']]["db"].closeTrade(self.streams[msg['s']]["trade"])
-			self.twm.stop_socket(self.streams[msg['s']]["stream"])
+			self.streams[msg['s']]["logger"].warning("Stop Passed", extra={"symbol":msg["s"], "baseProfit": self.streams[msg['s']]["trade"]["baseProfit"]})
+			try:
+				self.twm.stop_socket(self.streams[msg['s']]["stream"])
+			except KeyError:
+				self.streams[msg['s']]["logger"].error("Closing socket already closed", extra={"symbol":msg["s"]})
 	def startWork(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
@@ -63,7 +72,14 @@ class TSLexit(Worker):
 		for trade in self.trades:
 			self.streams[trade["symbol"]] = {}
 			self.streams[trade["symbol"]]["trade"] = trade
-			self.logger.info(f"Starting Socket: {trade['symbol']}")
+			#LOGGING
+			self.streams[trade["symbol"]]["logger"] = logging.getLogger(f'{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}')
+			self.streams[trade["symbol"]]["logger"].setLevel(logging.DEBUG)
+			handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
+			handler.setFormatter(ecs_logging.StdlibFormatter())
+			self.logger.addHandler(handler)
+			#######################################################
+			self.logger.info(f"Starting Socket: {trade['symbol']}", extra={"symbol":trade['symbol']})
 			self.streams[trade["symbol"]]["db"] = DB()
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
 		self.logger.debug(f"Giving time to sockets to establish")
