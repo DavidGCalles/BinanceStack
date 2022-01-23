@@ -73,7 +73,7 @@ class TSLexit(Worker):
 			self.streams[trade["symbol"]]["logger"].setLevel(logging.DEBUG)
 			handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
 			handler.setFormatter(ecs_logging.StdlibFormatter())
-			self.logger.addHandler(handler)
+			self.streams[trade["symbol"]]["logger"].addHandler(handler)
 			#######################################################
 			self.logger.info(f"Starting Socket: {trade['symbol']}", extra={"symbol":trade['symbol']})
 			self.streams[trade["symbol"]]["db"] = DB()
@@ -97,6 +97,13 @@ class TSLexit(Worker):
 							self.setLimits(trade, trade["price"])
 						self.streams[trade["symbol"]] = {}
 						self.streams[trade["symbol"]]["trade"] = trade
+						#LOGGING
+						self.streams[trade["symbol"]]["logger"] = logging.getLogger(f'{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}')
+						self.streams[trade["symbol"]]["logger"].setLevel(logging.DEBUG)
+						handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
+						handler.setFormatter(ecs_logging.StdlibFormatter())
+						self.streams[trade["symbol"]]["logger"].addHandler(handler)
+						#######################################################
 						self.streams[trade["symbol"]]["db"] = DB()
 						self.logger.info(f"Restarting socket: {trade['symbol']}")
 						self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
