@@ -330,8 +330,9 @@ class DB:
 		if len(delisted) > 0:
 			for sym in delisted:
 				st = f"DELETE FROM symbols WHERE symbol='{sym}'"
-				print(st)
+				#print(st)
 				cur.execute(st)
+				conn.commit()
 		print(f"Delisted: {delisted}")
 		#############################
 		#######NEWLISTED LOOP########
@@ -343,6 +344,7 @@ class DB:
 					inList = True
 			if inList == False and ex["symbol"][-3:] in TRADEABLE_ASSETS:
 				newlisted.append(ex["symbol"])
+				#print(ex)
 				self._insertSymbol(ex)
 		print(f"New Listed: {newlisted}")
 		#############################
