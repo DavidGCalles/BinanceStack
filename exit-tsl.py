@@ -37,7 +37,7 @@ class TSLexit(Worker):
 		#print(f"message type: {msg}")
 		price = Decimal(msg['c'])
 		#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['softSpot']}")
-		if self.streams[msg['s']]["trade"]["lastCheck"] == None or self.streams[msg['s']]["trade"]["lastCheck"]+self.pingInterval >= datetime.now():
+		if self.streams[msg['s']]["trade"]["lastCheck"] == None or self.streams[msg['s']]["trade"]["lastCheck"] <= datetime.now()-self.pingInterval:
 			trade = self.streams[msg['s']]["trade"]
 			now = datetime.now()
 			self.streams[msg['s']]["db"].updateTrade(trade["symbol"],"lastCheck", now)
