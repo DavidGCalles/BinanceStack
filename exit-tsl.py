@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#! FILENAME.py
+#! exit-tsl.py
 
 import asyncio
 from datetime import datetime, timedelta
