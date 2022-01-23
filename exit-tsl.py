@@ -38,9 +38,7 @@ class TSLexit(Worker):
 						["softLimit","softStop"],
 						[trade["softLimit"],trade["softStop"]])
 	def handle_socket_message(self,msg):
-		#print(f"message type: {msg}")
 		price = Decimal(msg['c'])
-		#print(f"{msg['s']}: {msg['c']} | {self.streams[msg['s']]['trade']['softLimit']}| {self.streams[msg['s']]['trade']['softSpot']}")
 		if self.streams[msg['s']]["trade"]["lastCheck"] == None or self.streams[msg['s']]["trade"]["lastCheck"] <= datetime.now()-self.pingInterval:
 			trade = self.streams[msg['s']]["trade"]
 			now = datetime.now()
@@ -49,13 +47,11 @@ class TSLexit(Worker):
 			self.streams[msg['s']]["trade"]["lastCheck"] = now
 		if price >= self.streams[msg['s']]["trade"]["softLimit"]:
 			self.setLimits(self.streams[msg['s']]["trade"], price)
-			#print(f"{now}- AUMENTO. {msg['s']} at {self.streams[msg['s']]['trade']['softLimit']}")
 			self.streams[msg['s']]["logger"].warning("Limit Passed", extra={"symbol": msg["s"], "softLimit": self.streams[msg['s']]['trade']['softLimit'], "softStop": self.streams[msg['s']]['trade']['softStop']})
 		elif price <= self.streams[msg['s']]["trade"]["softStop"]:
 			self.streams[msg['s']]["trade"]["closeTime"] = now
 			self.streams[msg['s']]["trade"]["sellPrice"] = price
 			self.streams[msg['s']]["trade"]["baseProfit"] = price- self.streams[msg['s']]["trade"]["price"]
-			print(f"{now}- CIERRE. {msg['s']} at {self.streams[msg['s']]['trade']['baseProfit']} benefit")
 			self.streams[msg['s']]["db"].closeTrade(self.streams[msg['s']]["trade"])
 			self.streams[msg['s']]["logger"].warning("Stop Passed", extra={"symbol":msg["s"], "baseProfit": self.streams[msg['s']]["trade"]["baseProfit"]})
 			try:
