@@ -499,6 +499,15 @@ class DB:
 		conn.close()
 		return toServe
 	def getConfig(self, user):
+		"""Obtiene las configuraciones de un usuario.
+
+		Args:
+			user (string): nombre del usuario
+
+		Returns:
+			[dict]: Contiene un diccionario con claves/valores de
+				las configuraciones guardadas en el servidor.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
