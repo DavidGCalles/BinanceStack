@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-#! FILENAME.py
+#! entry-macd.py
 
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -31,6 +31,18 @@ class MACDentry(Worker):
 		"""
 		pass
 	def calculate(self, df):
+		"""Corre las funciones necesarias de python-ta para
+		generar el dataframe solicitado.
+
+		#! MUCHAS DE ESTAS CARACTERISTICAS DEBERIAN IR A CONFIG.
+		#! - fast, slow, signal
+
+		Args:
+			df (pandas.Dataframe): Dataframe con los datos orignales y necesarios para la transformacion.
+
+		Returns:
+			df: El mismo dataframe, con los datos añadidos.
+		"""
 		#print(f'Calculating data from {symbol} in db at interval {interval}')
 		#print(df.to_string())
 		if df.empty == False:
