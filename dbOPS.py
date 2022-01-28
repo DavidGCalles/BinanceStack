@@ -636,21 +636,6 @@ class DB:
 			except:
 				self.conn.close()
 				return False
-	def isTradeUnattended(self, exitType, thresold):
-		cur = self.tryConnect()
-		now = datetime.now()
-		query = f"SELECT * FROM trading WHERE exitStra = '{exitType}' ORDER BY lastCheck LIMIT 1 FOR UPDATE SKIP LOCKED"
-		cur.execute(query)
-		for trade in cur:
-			fieldNames = ["openTime", "symbol", "entryStra", "exitStra", "qty", "price", "baseQty", "lastCheck"]
-			tradeDict = parseSQLtoDict(fieldNames, trade)
-			if tradeDict["lastCheck"]+thresold < datetime.now():
-				self.conn.close()
-				return tradeDict
-			else:
-				self.conn.close()
-				return None
-		self.conn.close()
 	def updateTrade(self, symbol, key, value):
 		cur = self.tryConnect()
 		if type(key) == list:
