@@ -637,6 +637,15 @@ class DB:
 				self.conn.close()
 				return False
 	def updateTrade(self, symbol, key, value):
+		"""Actualiza los trades, pudiendo hacerlo de uno en uno
+		o varios a la vez, proporcionando dos listas en vez de dos
+		argumentos unicos.
+
+		Args:
+			symbol (string): Par que se va a actualizar
+			key (string|list): campo/s que se van a actualizar
+			value (string|list): valor/es que se van a actualizar
+		"""
 		cur = self.tryConnect()
 		if type(key) == list:
 			query = f"UPDATE trading SET"
@@ -663,6 +672,11 @@ class DB:
 			print(mariadb.InterfaceError, err)
 			self.conn.close()
 	def closeTrade(self, trade):
+		"""Cierra un trade. Esto significa moverlo de la tabla trading a traded, añadiendo datos por el camino.
+
+		Args:
+			trade (dict): debe tener todos los datos necesarios para terminar el sql.
+		"""
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM traded WHERE openTime = '{trade['openTime']}' AND symbol = '{trade['symbol']}' AND qty = '{trade['qty']}'"
 		#print(query)
