@@ -597,6 +597,11 @@ class DB:
 				self.conn.close()
 				return 0
 	def openTrade(self, tradeDict):
+		"""Inserta un trade en la tabla de trading.
+
+		Args:
+			tradeDict (dict): Datos necesarios para que la peticion sql pueda procesarse.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
