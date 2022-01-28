@@ -498,27 +498,6 @@ class DB:
 		conn.commit()
 		conn.close()
 		return toServe
-	def serveData(self, symbol, interval="FULL"):
-		"""[summary]
-
-		Args:
-			symbol ([type]): [description]
-			interval (str, optional): [description]. Defaults to "FULL".
-		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		query = f"SELECT * FROM symbols ORDER BY {serveType} {order} LIMIT {limit}"
-		cur.execute(query)
-		conn.close()
 	def getConfig(self, user):
 		try:
 			conn = mariadb.connect(
