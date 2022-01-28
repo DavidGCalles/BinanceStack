@@ -551,10 +551,10 @@ class DB:
 		conn.commit()
 		conn.close()
 	def getOpenTrades(self):
-		"""[summary]
+		"""Obtiene toda la tabla de trades abiertos.
 
 		Returns:
-			[type]: [description]
+			[list]: Compuesta de diccionarios las claves de "fieldNames"
 		"""
 		cur = self.tryConnect()
 		query = f"SELECT * FROM trading"
@@ -581,6 +581,11 @@ class DB:
 			self.conn.close()
 			return[]
 	def getOpenTradeCount(self):
+		"""Devuelve el numero de trades en la tabla trading
+
+		Returns:
+			[int]: Numero de trades abiertos.
+		"""
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM trading"
 		cur.execute(query)
