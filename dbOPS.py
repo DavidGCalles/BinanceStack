@@ -14,6 +14,8 @@ import numpy as np
 
 """Lista de assets con los que se va a hacer trading. Esto limita la cantidad de pares almacenados desde el exchange a aquellos
 que tengan estas monedas como base (segundo componente)
+
+Esta variable ya es parte de config.wide. Se crea el issue #68
 """
 TRADEABLE_ASSETS = ["BTC", "ETH", "BNB"]
 
@@ -66,13 +68,6 @@ def parseSymbol(symbol):
 	d["dbMiner"] = symbol[10]
 	d["dbCalculator"] = symbol[11]
 	d["MACDentry"] = symbol[12]
-	return d
-
-def parseData(responseTuple):
-	fieldNames = ["openTime", "symbol", "open", "high", "low", "close", "macd", "sig", "histogram"]
-	d = {}
-	for ind, val in enumerate(fieldNames):
-		d[val] = fieldNames[ind]
 	return d
 
 def parseSQLtoDict(fieldNames, responseTuple):
