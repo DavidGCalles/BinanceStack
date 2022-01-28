@@ -618,6 +618,14 @@ class DB:
 		conn.commit()
 		conn.close()
 	def isTradeOpen(self, symbol):
+		"""Comprueba si hay un trade abierto con el simbolo entregado
+
+		Args:
+			symbol (string): Simbolo que se busca en la base de datos
+
+		Returns:
+			[bool]: True = Existente en la base de datos / False = No existe.
+		"""
 		cur = self.tryConnect()
 		query = f"SELECT COUNT(*) FROM trading WHERE symbol = '{symbol}'"
 		cur.execute(query)
