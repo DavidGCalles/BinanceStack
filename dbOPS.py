@@ -71,8 +71,18 @@ def parseSymbol(symbol):
 	return d
 
 def parseSQLtoDict(fieldNames, responseTuple):
-	"""Esta funcion va a sustituir a parseSymbol y parseData
-	De hecho, las vamos a reconstruir a su semejanza. Es hasta elegante."""
+	"""Convierte una respuesta SQL(tupla) en un diccionario
+	con los parametros determinados en fieldNames.
+
+	Args:
+		fieldNames (list): nombres de los campos (habitualmente coinciden
+			con los de las tablas de la respuesta)
+		responseTuple (tuple): respuesta en bruto de la base de datos.
+
+	Returns:
+		dict: diccionario en el que cada fieldName es asignado como Key y el valor
+			correspondiente de SQL
+	"""
 	d = {}
 	for ind, val in enumerate(fieldNames):
 		d[val] = responseTuple[ind]
@@ -90,6 +100,12 @@ class DB:
 		self.port = 3306
 		self.database = "binance"
 	def tryConnect(self):
+		"""Tras mucho desarrollo he admitido que hace falta una función de conexion.
+		Aquí está. Ahora tengo que implementarla...
+
+		Returns:
+			cursor: cursor para realizar operaciones db, con conexion activa.
+		"""
 		try:
 			self.conn = mariadb.connect(
 				user=self.user,
@@ -103,7 +119,6 @@ class DB:
 		self.conn.autocommit = False
 		return self.conn.cursor()
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), limit = 100):
-		#! Determina las cuestiones horarias (UTC) del funcionamiento y explicalas!!!!
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
 		Recibe una fecha de entrada y salida para saber los datos requeridos. También implementa
 		un mecanismo de bufer circular, donde "limit" es el numero de puntos de datos relacionados
@@ -162,6 +177,7 @@ class DB:
 		He tenido que prescindir de actualizar el valor "precision" porque me daba errores SQL que no
 		podia solucionar.
 		#? Trabajar en esto. Algun dia tendremos que saber porque sucede o necesitaremos ese valor. SEGURO.
+		#! Era una cuestión de palabras reservadas. Se puede usar precision tal y como esta ahora.
 
 		Args:
 			data (dict): Diccionario directo desde la API de binance. Esta funcion es llamada por cada par
@@ -384,53 +400,6 @@ class DB:
 				cur.execute(st)
 				conn.commit()'''
 		#################################
-		conn.close()
-	def updateData(self, intervalData, dataframe):
-		"""Actualiza las tablas de "data" con datos proporcionados en un pandas dataframe.
-
-		Args:
-			intervalData (string): "4h" o "1D"
-			dataframe (pandas.Dataframe): Dataframe que contiene los datos precalculados restantes en la base de datos.
-			Estos datos son MACD, signal, histogram.
-		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-				print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		for index, row in dataframe.iterrows():
-			queryStart = f"UPDATE data_{intervalData} SET "
-			macdBIT = ""
-			sigBIT = ""
-			histogramBIT = ""
-			##
-			macd = row["macd"]
-			sig = row["sig"]
-			histogram = row["histogram"]
-			##
-			if np.isnan(macd):
-				macdBIT = f"macd = NULL, "
-			else:
-				macdBIT = f"macd = '{macd}',"
-			##
-			if np.isnan(sig):
-				sigBIT = f"sig = NULL, "
-			else:
-				sigBIT = f"sig = '{sig}',"
-			##
-			if np.isnan(histogram):
-				histogramBIT = f"histogram = NULL "
-			else:
-				histogramBIT = f"histogram = '{histogram}' "
-			endQuery = f"WHERE symbol = '{row['symbol']}' AND openTime = '{row['openTime']}'"
-			cur.execute(queryStart+macdBIT+sigBIT+histogramBIT+endQuery)
-		conn.commit()
 		conn.close()
 	def getAPI(self, user):
 		"""Obtiene la clave de api y secreto de un usuario desde la tabla users.
