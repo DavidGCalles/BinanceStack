@@ -526,6 +526,15 @@ class DB:
 		conn.close()
 		return configDict
 	def setConfig(self, user, key, val):
+		"""Escribe valores de configuracion de manera individual.
+		Recibe usuario, clave y valor, por lo que la funcion solo crea
+		el query y lo ejecuta.
+
+		Args:
+			user (string): usuario
+			key (string): nombre de la caracteristica
+			val (string): valor de la característica.
+		"""
 		try:
 			conn = mariadb.connect(
 				user=self.user,
@@ -542,6 +551,11 @@ class DB:
 		conn.commit()
 		conn.close()
 	def getOpenTrades(self):
+		"""[summary]
+
+		Returns:
+			[type]: [description]
+		"""
 		cur = self.tryConnect()
 		query = f"SELECT * FROM trading"
 		try:
