@@ -36,6 +36,16 @@ class TSLexit(Worker):
 		self.pingInterval = timedelta(seconds=10) #!Esto deberia estar en configuraciones
 		self.logger.info("Start")
 	def isUnattended(self, lastCheck, thresold):
+		"""Función de conveniencia para comprobar una fecha. Creo que está muy bien hecha
+		porque es muy genérica y tiene una función muy clara.
+
+		Args:
+			lastCheck (datetime): Ultima comprobación del trade registrada.
+			thresold (timedelta): Tiempo maximo sin actualizaciones permitido.
+
+		Returns:
+			[boolean]: True = Desatentido /False = No desatendido.
+		"""
 		if lastCheck != None:
 			if lastCheck <= datetime.now()-thresold:
 				return True
