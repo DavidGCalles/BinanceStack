@@ -19,9 +19,21 @@ from dbOPS import DB
 from workerBase import Worker
 
 class TSLexit(Worker):
+	"""Algoritmo de salida que gestiona la supervisión de diferentes hilos
+	capturando precios a la vez según la estrategia "Trailing Stop Loss"
+
+	Args:
+		Worker (Worker): Instancia de trabajo con todos los metodos necesarios para controlar los precios
+		de los pares asignados en DB y cerrar los trades.
+	"""
 	def __init__(self, user):
+		"""Inicialización. Solo necesita un usuario como argumento.
+
+		Args:
+			user (string): nombre del usuario en db
+		"""
 		super().__init__(user, "TSL")
-		self.pingInterval = timedelta(seconds=10)
+		self.pingInterval = timedelta(seconds=10) #!Esto deberia estar en configuraciones
 		self.logger.info("Start")
 	def isUnattended(self, lastCheck, thresold):
 		if lastCheck != None:
