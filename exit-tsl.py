@@ -38,6 +38,7 @@ class TSLexit(Worker):
 	def isUnattended(self, lastCheck, thresold):
 		"""Función de conveniencia para comprobar una fecha. Creo que está muy bien hecha
 		porque es muy genérica y tiene una función muy clara.
+		#! Threesold posiblemente deberia ir a configuracion como variable.
 
 		Args:
 			lastCheck (datetime): Ultima comprobación del trade registrada.
@@ -54,12 +55,35 @@ class TSLexit(Worker):
 		else:
 			return True
 	def setLimits(self,trade, price):
+		"""Crea dinamicamente los límites superior e inferior de los trades.
+		Esta función se utiliza en varios puntos de la tarea.
+		#! Los margenes 0.07 y 0.05 deberian ir a configuracion
+
+		Además, reporta a la base de datos una actualizacion en el momento.
+
+		Args:
+			trade ([type]): [description]
+			price ([type]): [description]
+		"""
 		trade["softLimit"] = price+(price*Decimal("0.07"))
 		trade["softStop"] = price-(price*Decimal("0.05"))
 		self.db.updateTrade(trade["symbol"],
 						["softLimit","softStop"],
 						[trade["softLimit"],trade["softStop"]])
 	def handle_socket_message(self,msg):
+		"""Realmente, no me gusta esta manera de programar. No me parece
+		que lo este haciendo bien.
+
+		Esta función es la que se ejecuta recurrentemente cuando entran datos
+		desde los sockets de precios.
+
+		Se captura el precio y se empiezan a hacer comparaciones.
+		Si el precio es superior a softLimit, se ejecuta setLimits con el nuevo precio como base. Esto significa que tanto softLimit como softStop se incrementan.
+		Si el precio es inferior a softStop, se cierra el trade. Se recogen datos y se envia a la base de datos.
+
+		Args:
+			msg (dict): Mensaje de respuesta del socket. 
+		"""
 		price = Decimal(msg['c'])
 		if self.streams[msg['s']]["trade"]["lastCheck"] == None or self.streams[msg['s']]["trade"]["lastCheck"] <= datetime.now()-self.pingInterval:
 			trade = self.streams[msg['s']]["trade"]
@@ -81,6 +105,15 @@ class TSLexit(Worker):
 			except KeyError:
 				self.streams[msg['s']]["logger"].error("Closing socket already closed", extra={"symbol":msg["s"]})
 	def startWork(self):
+		"""Otra función que no me gusta nada.
+
+		Esta parte gestiona la existencia y salud de los hilos que comprueban los precios. Se crea un diccionario streams.
+		En este diccionario se almacenan entonces el trade, el logger específico y la instancia del conector de base de datos
+		que cada hilo va a necesitar.
+
+		Despues de eso los crea y los lanza. Cuando ha pasado un tiempo prudencial, empieza a chequear si alguno no ha iniciado
+		o ya se ha caido.
+		"""
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
 		self.logger.debug(f"Getting Open Trades")
