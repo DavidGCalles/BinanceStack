@@ -20,7 +20,7 @@ Binance Stack esta distribuido en diversas capas de funcionamiento. Esto se refl
 
 Esto levantará la base de datos central y adminer, con el cual se podrán ejecutar diversas acciones si no se es muy ducho en CLI y SQL. Tras esto, accederemos a [adminer](http://localhost:8070) y nos encontraremos con una pantalla asi:
 
-![Adminer Login Screen](/imgs/adminerLogin.png)
+![Adminer Login Screen](/imgs/adminerLogin.PNG)
 
 Podremos acceder al servidor con las credenciales escritas en la imagen, contraseña "binance", si no hemos modificado nada referente a la configuración de mariadb. Esto nos llevará a la pantalla de administración, donde tendremos que localizar la tabla "users" y añadir un nuevo elemento.
 
