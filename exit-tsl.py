@@ -104,16 +104,7 @@ class TSLexit(Worker):
 				self.twm.stop_socket(self.streams[msg['s']]["stream"])
 			except KeyError:
 				self.streams[msg['s']]["logger"].error("Closing socket already closed", extra={"symbol":msg["s"]})
-	def startWork(self):
-		"""Otra función que no me gusta nada.
-
-		Esta parte gestiona la existencia y salud de los hilos que comprueban los precios. Se crea un diccionario streams.
-		En este diccionario se almacenan entonces el trade, el logger específico y la instancia del conector de base de datos
-		que cada hilo va a necesitar.
-
-		Despues de eso los crea y los lanza. Cuando ha pasado un tiempo prudencial, empieza a chequear si alguno no ha iniciado
-		o ya se ha caido.
-		"""
+	def setupPool(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
 		self.logger.debug(f"Getting Open Trades")
@@ -126,15 +117,28 @@ class TSLexit(Worker):
 			#LOGGING
 			self.streams[trade["symbol"]]["logger"] = logging.getLogger(f'{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}')
 			self.streams[trade["symbol"]]["logger"].setLevel(logging.DEBUG)
-			handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
-			handler.setFormatter(ecs_logging.StdlibFormatter())
-			self.streams[trade["symbol"]]["logger"].addHandler(handler)
+			if len(self.streams[trade["symbol"]]["logger"].handlers) > 0:
+				pass
+			else:
+				handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
+				handler.setFormatter(ecs_logging.StdlibFormatter())
+				self.streams[trade["symbol"]]["logger"].addHandler(handler)
 			#######################################################
 			self.logger.info(f"Starting Socket: {trade['symbol']}", extra={"symbol":trade['symbol']})
 			self.streams[trade["symbol"]]["db"] = DB()
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
-		self.logger.debug(f"Giving time to sockets to establish")
-		sleep(20)
+		#self.logger.debug(f"Giving time to sockets to establish")
+	def startWork(self):
+		"""Otra función que no me gusta nada.
+
+		Esta parte gestiona la existencia y salud de los hilos que comprueban los precios. Se crea un diccionario streams.
+		En este diccionario se almacenan entonces el trade, el logger específico y la instancia del conector de base de datos
+		que cada hilo va a necesitar.
+
+		Despues de eso los crea y los lanza. Cuando ha pasado un tiempo prudencial, empieza a chequear si alguno no ha iniciado
+		o ya se ha caido.
+		"""
+		self.setupPool()
 		self.logger.info(f"Starting unattended monitor")
 		while True: 
 			if self.lastCheck <= datetime.now()-timedelta(seconds=30): ## Aqui hay que usar self.interval
@@ -155,9 +159,12 @@ class TSLexit(Worker):
 						#LOGGING
 						self.streams[trade["symbol"]]["logger"] = logging.getLogger(f'{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}')
 						self.streams[trade["symbol"]]["logger"].setLevel(logging.DEBUG)
-						handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
-						handler.setFormatter(ecs_logging.StdlibFormatter())
-						self.streams[trade["symbol"]]["logger"].addHandler(handler)
+						if len(self.streams[trade["symbol"]]["logger"].handlers) > 0:
+							pass
+						else:
+							handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
+							handler.setFormatter(ecs_logging.StdlibFormatter())
+							self.streams[trade["symbol"]]["logger"].addHandler(handler)
 						#######################################################
 						self.streams[trade["symbol"]]["db"] = DB()
 						self.logger.info(f"Restarting socket: {trade['symbol']}")
