@@ -105,8 +105,9 @@ class MACDentry(Worker):
 													"entry": "MACDentry",
 													"exit": "TSL"}
 										self.openTrade(tradeDict)
+										self.logger.debug("Entrada detectada", extra=tradeDict)
 					else:
-						print(f"{pair['symbol']} TRADE YA ABIERTO!")
+						self.logger.debug("In Monitoring", extra={"symbol": pair["symbol"]})
 						pass
 				self.timer.updateLastCheck(self.db.getOlderServe(self.work))
 			if self.configInterval.tick() == True:
