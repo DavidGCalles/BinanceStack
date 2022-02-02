@@ -146,7 +146,7 @@ class Worker:
 			tradeDict ([type]): openTime, symbol, entry, exit, price
 		"""
 		if self.db.getOpenTradeCount() >= self.maxTrades:
-			pass
+			self.logger.critical("Maximos Trades Alcanzados", extra={"symbol": tradeDict["symbol"]})
 		else:
 			print("OPENING TRADE")
 			check = self._checkRules(tradeDict["pair"])
@@ -162,6 +162,7 @@ class Worker:
 				print("Inserting in database.")
 				## No funciona correctamente.
 				self.db.openTrade(tradeDict)
+				self.logger.warning("Trade Abierto", extra=tradeDict)
 			else:
 				print("El trade no cumple las reglas. Revisa el codigo.")
 	def closeTrade(self, tradeDict):
