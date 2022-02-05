@@ -171,6 +171,7 @@ class TSLexit(Worker):
 							self.setLimits(trade, trade["price"])
 						self.setupStream(trade)
 						self.logger.info(f"Restarting socket: {trade['symbol']}")
+				self.monitorNewTrades()
 
 if __name__ == "__main__":
 	##Instantiate Class
