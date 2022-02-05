@@ -128,6 +128,33 @@ class TSLexit(Worker):
 			self.streams[trade["symbol"]]["db"] = DB()
 			self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
 		#self.logger.debug(f"Giving time to sockets to establish")
+	def setupStream(self, trade):
+		self.streams[trade["symbol"]] = {}
+		self.streams[trade["symbol"]]["trade"] = trade
+		#LOGGING
+		self.streams[trade["symbol"]]["logger"] = logging.getLogger(f'{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}')
+		self.streams[trade["symbol"]]["logger"].setLevel(logging.DEBUG)
+		if len(self.streams[trade["symbol"]]["logger"].handlers) > 0:
+			pass
+		else:
+			handler = logging.FileHandler(f'logs/{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}.json')
+			handler.setFormatter(ecs_logging.StdlibFormatter())
+			self.streams[trade["symbol"]]["logger"].addHandler(handler)
+		#######################################################
+		self.logger.info(f"Starting Socket: {trade['symbol']}", extra={"symbol":trade['symbol']})
+		self.streams[trade["symbol"]]["db"] = DB()
+		self.streams[trade["symbol"]]["stream"] = self.twm.start_symbol_ticker_socket(callback=self.handle_socket_message, symbol=trade["symbol"])
+	def monitorNewTrades(self):
+		newtrades = self.db.getOpenTrades()
+		symbolsTrading = []
+		for monitored in self.trades:
+			symbolsTrading.append(monitored["symbol"]) 
+		for nTrade in newtrades:
+				if nTrade["symbol"] in symbolsTrading:
+					#Trade ya en monitoring
+					pass
+				else:
+					self.setupStream(nTrade)
 	def startWork(self):
 		"""Otra función que no me gusta nada.
 
