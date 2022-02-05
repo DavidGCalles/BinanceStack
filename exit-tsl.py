@@ -91,23 +91,26 @@ class TSLexit(Worker):
 			self.streams[msg['s']]["db"].updateTrade(trade["symbol"],"lastCheck", now)
 			self.streams[msg['s']]["logger"].debug("Socket Ping", extra={"symbol":msg['s'], "price":price})
 			self.streams[msg['s']]["trade"]["lastCheck"] = now
-		if price >= self.streams[msg['s']]["trade"]["softLimit"]:
-			self.setLimits(self.streams[msg['s']]["trade"], price)
-			self.streams[msg['s']]["logger"].warning("Limit Passed", extra={"symbol": msg["s"], "softLimit": self.streams[msg['s']]['trade']['softLimit'], "softStop": self.streams[msg['s']]['trade']['softStop']})
-		elif price <= self.streams[msg['s']]["trade"]["softStop"]:
-			self.streams[msg['s']]["trade"]["closeTime"] = now
-			self.streams[msg['s']]["trade"]["sellPrice"] = price
-			self.streams[msg['s']]["trade"]["baseProfit"] = price- self.streams[msg['s']]["trade"]["price"]
-			self.streams[msg['s']]["db"].closeTrade(self.streams[msg['s']]["trade"])
-			self.streams[msg['s']]["logger"].warning("Stop Passed", extra={"symbol":msg["s"], "baseProfit": self.streams[msg['s']]["trade"]["baseProfit"]})
-			try:
-				self.twm.stop_socket(self.streams[msg['s']]["stream"])
-			except KeyError:
-				self.streams[msg['s']]["logger"].error("Closing socket already closed", extra={"symbol":msg["s"]})
+		try:
+			if price >= self.streams[msg['s']]["trade"]["softLimit"]:
+				self.setLimits(self.streams[msg['s']]["trade"], price)
+				self.streams[msg['s']]["logger"].warning("Limit Passed", extra={"symbol": msg["s"], "softLimit": self.streams[msg['s']]['trade']['softLimit'], "softStop": self.streams[msg['s']]['trade']['softStop']})
+			elif price <= self.streams[msg['s']]["trade"]["softStop"]:
+				self.streams[msg['s']]["trade"]["closeTime"] = now
+				self.streams[msg['s']]["trade"]["sellPrice"] = price
+				self.streams[msg['s']]["trade"]["baseProfit"] = price- self.streams[msg['s']]["trade"]["price"]
+				self.streams[msg['s']]["db"].closeTrade(self.streams[msg['s']]["trade"])
+				self.streams[msg['s']]["logger"].warning("Stop Passed", extra={"symbol":msg["s"], "baseProfit": self.streams[msg['s']]["trade"]["baseProfit"]})
+				try:
+					self.twm.stop_socket(self.streams[msg['s']]["stream"])
+				except KeyError:
+					self.streams[msg['s']]["logger"].error("Closing socket already closed", extra={"symbol":msg["s"]})
+		except TypeError:
+			self.streams[msg['s']]["logger"].error("Response in already closed socket", extra={"symbol":msg["s"]})
 	def setupPool(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
-		self.logger.debug(f"Getting Open Trades")
+		self.logger.debug(f"Setting Up Stream Pool")
 		self.trades = self.db.getOpenTrades()
 		self.streams = {}
 		self.lastCheck = datetime.now()
@@ -139,6 +142,7 @@ class TSLexit(Worker):
 					#Trade ya en monitoring
 					pass
 				else:
+					self.logger.warning("Trade nuevo detectado", extra={"symbol": nTrade["symbol"]})
 					self.setupStream(nTrade)
 	def startWork(self):
 		"""Otra función que no me gusta nada.
@@ -168,6 +172,7 @@ class TSLexit(Worker):
 							self.setLimits(trade, trade["price"])
 						self.setupStream(trade)
 						self.logger.info(f"Restarting socket: {trade['symbol']}")
+				self.monitorNewTrades()
 
 if __name__ == "__main__":
 	##Instantiate Class
