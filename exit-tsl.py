@@ -171,7 +171,6 @@ class TSLexit(Worker):
 						if trade["softLimit"] == None:
 							self.setLimits(trade, trade["price"])
 						self.setupStream(trade)
-						self.logger.info(f"Restarting socket: {trade['symbol']}")
 				self.monitorNewTrades()
 
 if __name__ == "__main__":
