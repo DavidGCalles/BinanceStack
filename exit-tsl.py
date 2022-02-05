@@ -110,7 +110,7 @@ class TSLexit(Worker):
 	def setupPool(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
-		self.logger.debug(f"Getting Open Trades")
+		self.logger.debug(f"Setting Up Stream Pool")
 		self.trades = self.db.getOpenTrades()
 		self.streams = {}
 		self.lastCheck = datetime.now()
@@ -142,6 +142,7 @@ class TSLexit(Worker):
 					#Trade ya en monitoring
 					pass
 				else:
+					self.logger.warning("Trade nuevo detectado", extra={"symbol": nTrade["symbol"]})
 					self.setupStream(nTrade)
 	def startWork(self):
 		"""Otra función que no me gusta nada.
