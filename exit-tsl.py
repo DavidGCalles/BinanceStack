@@ -148,7 +148,7 @@ class TSLexit(Worker):
 					self.logger.warning("Trade nuevo detectado", extra={"symbol": nTrade["symbol"]})
 					self.setupStream(nTrade)
 	def startWork(self):
-		"""Otra función que no me gusta nada.
+		"""Otra función que no me gusta nada. Aunque la vamos mejorando y factorizando.
 
 		Esta parte gestiona la existencia y salud de los hilos que comprueban los precios. Se crea un diccionario streams.
 		En este diccionario se almacenan entonces el trade, el logger específico y la instancia del conector de base de datos
