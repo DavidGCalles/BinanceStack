@@ -67,6 +67,7 @@ class TSLexit(Worker):
 		"""
 		trade["softLimit"] = price+(price*Decimal("0.07"))
 		trade["softStop"] = price-(price*Decimal("0.05"))
+		self.logger.info("New limits set", extra={"symbol":trade["symbol"], "softLimit": trade["softLimit"], "softStop": trade["softStop"]})
 		self.db.updateTrade(trade["symbol"],
 						["softLimit","softStop"],
 						[trade["softLimit"],trade["softStop"]])
@@ -106,7 +107,7 @@ class TSLexit(Worker):
 				except KeyError:
 					self.streams[msg['s']]["logger"].error("Closing socket already closed", extra={"symbol":msg["s"]})
 		except TypeError:
-			self.streams[msg['s']]["logger"].error("Response in already closed socket", extra={"symbol":msg["s"]})
+			self.streams[msg['s']]["logger"].error("Faltan datos en trade", extra={"symbol":msg["s"]})
 	def setupPool(self):
 		self.twm = ThreadedWebsocketManager(api_key=self.API[0], api_secret=self.API[1])
 		self.twm.start()
@@ -122,6 +123,8 @@ class TSLexit(Worker):
 		#LOGGING
 		self.streams[trade["symbol"]]["logger"] = logging.getLogger(f'{trade["symbol"]}-{trade["entryStra"]}-{trade["exitStra"]}')
 		self.streams[trade["symbol"]]["logger"].setLevel(logging.DEBUG)
+		if trade["softLimit"] == None:
+			self.setLimits(trade, trade["price"])
 		if len(self.streams[trade["symbol"]]["logger"].handlers) > 0:
 			pass
 		else:
@@ -168,8 +171,6 @@ class TSLexit(Worker):
 							self.twm.stop_socket(self.streams[trade["symbol"]]["stream"])
 						except:
 							self.logger.error(f"Error closing socket")
-						if trade["softLimit"] == None:
-							self.setLimits(trade, trade["price"])
 						self.setupStream(trade)
 				self.monitorNewTrades()
 
