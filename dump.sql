@@ -31,6 +31,13 @@ CREATE TABLE IF NOT EXISTS `data_1d` (
   `high` DECIMAL(40,8) NOT NULL ,
   `low` DECIMAL(40,8) NOT NULL ,
   `close` DECIMAL(40,8) NOT NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `data_5m` (
+  `openTime` DATETIME NOT NULL ,
+  `symbol` VARCHAR(50) NOT NULL ,
+  `open` DECIMAL(40,8) NOT NULL ,
+  `high` DECIMAL(40,8) NOT NULL ,
+  `low` DECIMAL(40,8) NOT NULL ,
+  `close` DECIMAL(40,8) NOT NULL ) ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `trading` (
   `openTime` datetime NOT NULL,
   `symbol` varchar(50) NOT NULL,

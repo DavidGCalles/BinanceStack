@@ -15,6 +15,7 @@ class dbMiner(Worker):
 		self.pointsNeeded = 54
 		self.interval4h = timedelta(hours=4)
 		self.interval1d = timedelta(days=1)
+		self.interval5m = timedelta(minutes=5)
 	def _checkData(self, symbol, interval):
 		"""Comprueba el ultimo registro de "symbol" en la tabla determinada por "interval".
 		Si no existe ultimo registro, obtiene todos los determinados en "pointsNeeded" y los carga en la base de datos.
@@ -32,6 +33,8 @@ class dbMiner(Worker):
 			deltaInterval = self.interval1d
 		elif interval == "4h":
 			deltaInterval = self.interval4h
+		elif interval == "5m":
+			deltaInterval = self.interval5m
 		lastPoint = self.db.getLastPoint(symbol, interval)
 		dateEnd = datetime.now()
 		if len(lastPoint) == 0:
@@ -61,6 +64,7 @@ class dbMiner(Worker):
 					#print(f'---> Checking in db')
 					self._checkData(pair["symbol"], "4h")
 					self._checkData(pair["symbol"], "1d")
+					self._checkData(pair["symbol"], "5m")
 				self.timer.updateLastCheck(self.db.getOlderServe(self.work))
 				self.logger.info("End Mining")
 			if self.configInterval.tick() == True:
