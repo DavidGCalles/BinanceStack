@@ -124,6 +124,8 @@ class DB:
 		un mecanismo de bufer circular, donde "limit" es el numero de puntos de datos relacionados
 		que se almacenarán en total, eliminando los mas antiguos según entran nuevos (FIFO).
 
+		#! Se desactiva el bufer circular para comenzar a tratar los datos de otro modo.
+
 		Args:
 			client (binance.Client): Instancia de cliente de binance para hacer las peticiones a la api.
 			symbol (string): Par de monedas requerido.
@@ -157,7 +159,7 @@ class DB:
 				cur.execute(query)
 				conn.commit()
 		##OPERACION DE LIMPIEZA
-		query = f"SELECT COUNT(*) FROM data_{interval} WHERE symbol = '{symbol}'"
+		'''query = f"SELECT COUNT(*) FROM data_{interval} WHERE symbol = '{symbol}'"
 		cur.execute(query)
 		count = 0
 		for point in cur:
@@ -169,7 +171,7 @@ class DB:
 			toErase = count-limit
 			query = f"DELETE FROM data_{interval} WHERE symbol = '{symbol}' ORDER BY openTime ASC LIMIT {toErase}"
 			cur.execute(query)
-			conn.commit()
+			conn.commit()'''
 		conn.close()
 	def _insertSymbol(self, data):
 		"""Funcion para insertar los simbolos y sus datos en la tabla Symbols.
