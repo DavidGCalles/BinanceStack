@@ -1,3 +1,8 @@
+from datetime import datetime, timedelta
+from decimal import Decimal
+from sys import argv
+
+from binance.client import Client
 from workerBase import Worker
 
 class BackTest(Worker):
@@ -6,8 +11,10 @@ class BackTest(Worker):
 	def startWork(self):
 		entries = {}
 		symbols = self.db.getSymbols()
-		for pair in symbols:
-			rawData = self.db.getDataFrame(pair["symbol"], "4h")
+		for pair in symbols[:10]:
+			rawData = self.db.getDataFrame(pair["symbol"], "5m", dataTable="backtest")
+			print(f'{pair["symbol"]} : {rawData.size} | {rawData.iloc[0]["openTime"]}| {rawData.iloc[-1]["openTime"]}')
+			#print(rawData.head())
 			
 
 if __name__ == "__main__":

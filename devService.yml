@@ -1,0 +1,16 @@
+version: "3.8"
+
+services:
+  devbacktest:
+    build:
+      dockerfile: workerDev.dockerfile
+    #restart: always
+    command: backtest.py david
+    depends_on:
+      - mariadb
+      - dbworker
+    volumes:
+      - .:/var/www/html
+      - logs:/var/www/html/logs
+volumes:
+  logs:
