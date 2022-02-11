@@ -17,6 +17,27 @@ CREATE TABLE IF NOT EXISTS `symbols` (
   `dbMiner` DATETIME NULL DEFAULT NULL ,
   `dbCalculator` DATETIME NULL DEFAULT NULL,
   `MACDentry` DATETIME NULL DEFAULT NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `backtest_data_4h` (
+  `openTime` DATETIME NOT NULL ,
+  `symbol` VARCHAR(50) NOT NULL ,
+  `open` DECIMAL(40,8) NOT NULL ,
+  `high` DECIMAL(40,8) NOT NULL ,
+  `low` DECIMAL(40,8) NOT NULL ,
+  `close` DECIMAL(40,8) NOT NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `backtest_data_1d` (
+  `openTime` DATETIME NOT NULL ,
+  `symbol` VARCHAR(50) NOT NULL ,
+  `open` DECIMAL(40,8) NOT NULL ,
+  `high` DECIMAL(40,8) NOT NULL ,
+  `low` DECIMAL(40,8) NOT NULL ,
+  `close` DECIMAL(40,8) NOT NULL ) ENGINE = InnoDB;
+CREATE TABLE IF NOT EXISTS `backtest_data_5m` (
+  `openTime` DATETIME NOT NULL ,
+  `symbol` VARCHAR(50) NOT NULL ,
+  `open` DECIMAL(40,8) NOT NULL ,
+  `high` DECIMAL(40,8) NOT NULL ,
+  `low` DECIMAL(40,8) NOT NULL ,
+  `close` DECIMAL(40,8) NOT NULL ) ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `data_4h` (
   `openTime` DATETIME NOT NULL ,
   `symbol` VARCHAR(50) NOT NULL ,
