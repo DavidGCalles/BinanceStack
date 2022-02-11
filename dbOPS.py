@@ -245,7 +245,7 @@ class DB:
 					last.append(point)
 		self.conn.close()
 		return last
-	def getDataFrame(self, symbol,intervalData):
+	def getDataFrame(self, symbol,intervalData, dataTable = ""):
 		"""Obtiene un pandas dataframe del simbolo e intervalo solicitados.
 
 		Args:
@@ -255,21 +255,13 @@ class DB:
 		Returns:
 			[pandas.Dataframe]: Dataframe con todos los datos del simbolo requerido. 
 		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		query = f"SELECT * FROM data_{intervalData} WHERE symbol = '{symbol}' ORDER BY openTime ASC"
-		pdQuery = pd.read_sql_query(query, conn)
+		if dataTable == "backtest":
+			dataTable = "backtest_"
+		cur = self.tryConnect()
+		query = f"SELECT * FROM {dataTable}data_{intervalData} WHERE symbol = '{symbol}' ORDER BY openTime ASC"
+		pdQuery = pd.read_sql_query(query, self.conn)
 		df = pd.DataFrame(pdQuery, columns=["openTime","symbol","open","high","low","close"])
-		conn.close()
+		self.conn.close()
 		return df
 	def getSymbols(self):
 		"""Obtiene una lista de pares limpia de la base de datos.
