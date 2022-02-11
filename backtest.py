@@ -11,10 +11,17 @@ class BackTest(Worker):
 	def startWork(self):
 		entries = {}
 		symbols = self.db.getSymbols()
-		for pair in symbols[:10]:
+		for pair in symbols[:100]:
 			rawData = self.db.getDataFrame(pair["symbol"], "5m", dataTable="backtest")
-			print(f'{pair["symbol"]} : {rawData.size} | {rawData.iloc[0]["openTime"]}| {rawData.iloc[-1]["openTime"]}')
-			#print(rawData.head())
+			if rawData.shape[0] > 0:
+				print(f'')
+				print(f'--5m OK |{pair["symbol"]} : {rawData.shape[0]} | {rawData.iloc[0]["openTime"]}| {rawData.iloc[-1]["openTime"]}')
+				data4h = self.db.getDataFrame(pair["symbol"], "4h", dataTable="backtest")
+				data1d = self.db.getDataFrame(pair["symbol"], "1d", dataTable="backtest")
+				if data4h.shape[0] > 0 and data1d.shape[0] > 0:
+					print(f'--4h/1d OK| {pair["symbol"]} : {data4h.shape[0]}/{data1d.shape[0]}')
+				
+					
 			
 
 if __name__ == "__main__":
