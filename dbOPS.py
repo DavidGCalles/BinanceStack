@@ -118,7 +118,7 @@ class DB:
 				print(f"Error connecting to MariaDB Platform: {e}")
 		self.conn.autocommit = False
 		return self.conn.cursor()
-	def insertData(self, client, symbol, interval, start, end = datetime.now(), limit = 100):
+	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
 		Recibe una fecha de entrada y salida para saber los datos requeridos. También implementa
 		un mecanismo de bufer circular, donde "limit" es el numero de puntos de datos relacionados
@@ -129,35 +129,28 @@ class DB:
 		Args:
 			client (binance.Client): Instancia de cliente de binance para hacer las peticiones a la api.
 			symbol (string): Par de monedas requerido.
-			interval (string): Cadena que, en este momento solo puede ser  "4h" o "1d". Esta muy enlazado a las tablas de la BBDD
+			interval (string): Cadena que, en este momento solo puede ser  "4h","1d" o "5m". Esta muy enlazado a las tablas de la BBDD
 			start (datetime.datetime): Fecha de comienzo 
 			end (datetime.datetime, optional): Fecha de final. Defaults to datetime.now().
+			dataTable(string): Tabla de datos actuales o datos backtest. Defaults to ""
 			limit (int, optional): Limite de puntos de datos en los que el bufer actua. Defaults to 100.
 		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-				print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
+		cur = self.tryConnect()
+		if dataTable == "backtest":
+			dataTable = "backtest_"
 		try:
 			kline = parseKline(client.get_historical_klines(symbol, interval, start_str= f"{start}", end_str= f"{end}"))
 		except (Rexceptions.ConnectionError, Uexceptions.ConnectionError,
 			Uexceptions.ReadTimeoutError, Rexceptions.ReadTimeout):
 			kline = []
 			print(f"--> Connection reset, skipping")
-			conn.close()
+			self.conn.close()
 		if len(kline) > 0:
 			for candle in kline:
-				query = f"INSERT INTO `data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}');"
+				query = f"INSERT INTO `{dataTable}data_{interval}` (`openTime`, `symbol`, `open`, `high`, `low`, `close`) VALUES ('{candle['openTime']}', '{symbol}', '{candle['open']}', '{candle['high']}', '{candle['low']}', '{candle['close']}');"
 				#print(query)
 				cur.execute(query)
-				conn.commit()
+				self.conn.commit()
 		##OPERACION DE LIMPIEZA
 		'''query = f"SELECT COUNT(*) FROM data_{interval} WHERE symbol = '{symbol}'"
 		cur.execute(query)
@@ -172,7 +165,7 @@ class DB:
 			query = f"DELETE FROM data_{interval} WHERE symbol = '{symbol}' ORDER BY openTime ASC LIMIT {toErase}"
 			cur.execute(query)
 			conn.commit()'''
-		conn.close()
+		self.conn.close()
 	def _insertSymbol(self, data):
 		"""Funcion para insertar los simbolos y sus datos en la tabla Symbols.
 
@@ -222,7 +215,7 @@ class DB:
 		cur.execute(st)
 		conn.commit()
 		conn.close()
-	def getLastPoint(self,symbol,intervalData):
+	def getLastPoint(self,symbol,intervalData, dataTable = ""):
 		"""Obtiene el punto mas reciente de las tablas de datos, del symbolo requerido.
 		Esta función se usa para determinar los rangos de datos solicitados a la API de
 		binance.
@@ -230,32 +223,27 @@ class DB:
 		Args:
 			symbol (string): Cadena del par necesario.
 			intervalData (string): "4h" o "1D", referentes a las tablas de datos almacenados.
+			dataTable (string): Para utilizar como fuente las tablas de datos actuales y backtest intercambiablemente.
+
 
 		Returns:
-			[list]: Lista de un solo punto que contiene la entrada solicitada. 
+			[list]: Lista de dos puntos que contiene la entrada solicitada. Punto mas reciente, y punto mas alejado en el tiempo
 			#? Una lista de un solo punto parece un poco absurda. Quizá habría que factorizar esta funcion de algun modo.
 		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-				print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		##Obtenemos la entrada mas reciente del simbolo en la tabla de 4h
-		query = f"SELECT * FROM data_{intervalData} WHERE symbol = '{symbol}' ORDER BY openTime DESC LIMIT 1"
-		cur.execute(query)
+		cur = self.tryConnect()
+		if dataTable == "backtest":
+			dataTable = "backtest_"
 		last = []
-		for point in cur:
-			try:
-				last.append(point[0])
-			except IndexError:
-				last.append(point)
-		conn.close()
+		orders = ["DESC","ASC"]
+		for order in orders:
+			query = f"SELECT * FROM {dataTable}data_{intervalData} WHERE symbol = '{symbol}' ORDER BY openTime {order} LIMIT 1"
+			cur.execute(query)
+			for point in cur:
+				try:
+					last.append(point[0])
+				except IndexError:
+					last.append(point)
+		self.conn.close()
 		return last
 	def getDataFrame(self, symbol,intervalData):
 		"""Obtiene un pandas dataframe del simbolo e intervalo solicitados.
