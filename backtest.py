@@ -5,6 +5,8 @@ from sys import argv
 from binance.client import Client
 from workerBase import Worker
 
+from entry_macd import MACDentry
+
 class BackTest(Worker):
 	def __init__(self, user):
 		super().__init__(user, "backTest")
