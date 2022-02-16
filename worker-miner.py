@@ -13,7 +13,7 @@ class dbMiner(Worker):
 		super().__init__(user, "dbMiner")
 		self.logger.info(f"Start {self.work}")
 		self.pointsNeeded = 54
-		self.periods = 100
+		self.periods = 500
 		self.storageStart = datetime.now() - timedelta(weeks=16)
 		self.interval4h = timedelta(hours=4)
 		self.interval1d = timedelta(days=1)
