@@ -29,14 +29,16 @@ class BackTest(Worker):
 			if item[1]+interval >= timePoint:
 				endItem = item
 				break
-		print(f"Since: {timePoint} to {df.loc[0:endItem[0]]}")
+		#print(f"Since: {timePoint} to {df.loc[0:endItem[0]]}")
 		return df.loc[0:endItem[0]]
 	def startWork(self):
-		entries = {}
+		entry = MACDentry(self.user)
 		symbols = self.db.getSymbols()
-		for pair in symbols[:1]:
+		count = 0
+		for pair in symbols[:100]:
 			print(f'')
-			print(f"Starting {pair['symbol']} backtest")
+			print(f"{count}/100 Starting {pair['symbol']} backtest")
+			count += 1
 			rawData = self.db.getDataFrame(pair["symbol"], "5m", dataTable="backtest")
 			if rawData.shape[0] > 0:
 				if self.checkCohesion(rawData, timedelta(minutes=5)):
@@ -49,7 +51,10 @@ class BackTest(Worker):
 							slice4h = self.pickData(row["openTime"], data4h, timedelta(hours=4))
 							slice1d = self.pickData(row["openTime"], data1d, timedelta(hours=24))
 							avgPrice = (row["open"]+row["close"]+row["high"]+row["low"])/4
-
+							relevantDict = {"4h": entry.extractRelevant(entry.calculate(data4h)), 
+											"1d": entry.extractRelevant(entry.calculate(data1d))}
+							if entry.checkEntry(relevantDict) == True:
+								print("Abriendo Trade!")
 				else:
 					print("No hay cohesion en 5m")
 

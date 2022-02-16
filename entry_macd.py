@@ -72,7 +72,6 @@ class MACDentry(Worker):
 	def checkEntry(self, relevantDict):
 		if relevantDict["4h"] != [None, None] and relevantDict["1d"] != [None, None]: 
 			if relevantDict["4h"][0] <= 0 and relevantDict["4h"][1] > 0:
-				print(f"{pair['symbol']} 4h\n{relevantDict['4h'][0]}\n{relevantDict['4h'][1]}\n{pair['symbol']} 1d\n{relevantDict['1d'][0]}\n{relevantDict['1d'][1]}")
 				if relevantDict['1d'][0] < relevantDict['1d'][1]:
 					return True
 				else:
@@ -98,6 +97,7 @@ class MACDentry(Worker):
 						relevantDict = {"4h": self.extractRelevant(df4h),
 										"1d": self.extractRelevant(df1d)}
 						if self.checkEntry(relevantDict) == True:
+							print(f"{pair['symbol']} 4h\n{relevantDict['4h'][0]}\n{relevantDict['4h'][1]}\n{pair['symbol']} 1d\n{relevantDict['1d'][0]}\n{relevantDict['1d'][1]}")
 							price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
 							tradeDict = {"pair": pair,
 										"symbol": pair["symbol"],
