@@ -35,9 +35,9 @@ class BackTest(Worker):
 		entry = MACDentry(self.user)
 		symbols = self.db.getSymbols()
 		count = 0
-		for pair in symbols[:100]:
+		for pair in symbols[:1]:
 			print(f'')
-			print(f"{count}/100 Starting {pair['symbol']} backtest")
+			print(f"{count}/{len(symbols)} Starting {pair['symbol']} backtest")
 			count += 1
 			rawData = self.db.getDataFrame(pair["symbol"], "5m", dataTable="backtest")
 			if rawData.shape[0] > 0:
@@ -47,14 +47,20 @@ class BackTest(Worker):
 					data1d = self.db.getDataFrame(pair["symbol"], "1d", dataTable="backtest")
 					if data4h.shape[0] > 0 and data1d.shape[0] > 0 and self.checkCohesion(data4h, timedelta(hours=4)) and self.checkCohesion(data1d, timedelta(days=1)):
 						print(f'-4h/1d OK| {pair["symbol"]} : {data4h.shape[0]}/{data1d.shape[0]}')
+						startTime = datetime.now()
+						print(f"-Starting backtest at {startTime}")
 						for index, row in rawData.iterrows():
 							slice4h = self.pickData(row["openTime"], data4h, timedelta(hours=4))
 							slice1d = self.pickData(row["openTime"], data1d, timedelta(hours=24))
 							avgPrice = (row["open"]+row["close"]+row["high"]+row["low"])/4
-							relevantDict = {"4h": entry.extractRelevant(entry.calculate(data4h)), 
-											"1d": entry.extractRelevant(entry.calculate(data1d))}
+							relevantDict = {"4h": entry.extractRelevant(entry.calculate(slice4h)), 
+											"1d": entry.extractRelevant(entry.calculate(slice1d))}
+							print(f'{row["openTime"]}: {avgPrice} | {relevantDict}')
 							if entry.checkEntry(relevantDict) == True:
-								print("Abriendo Trade!")
+								print("--Abriendo Trade!")
+								print(row)
+								break
+						print(f"-Ending backtest. Time Elapsed: {datetime.now()-startTime}")
 				else:
 					print("No hay cohesion en 5m")
 

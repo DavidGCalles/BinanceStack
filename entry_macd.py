@@ -49,9 +49,12 @@ class MACDentry(Worker):
 			try:
 				macd = ta.macd(close=df["close"], fast=12, slow=26, signal=9, append=True)
 				#print(macd.to_string())
-				df["macd"] = macd["MACD_12_26_9"]
+				df.assign(macd = macd["MACD_12_26_9"],
+						sig = macd["MACDs_12_26_9"],
+						histogram = macd["MACDs_12_26_9"])
+				'''df["macd"] = macd["MACD_12_26_9"]
 				df["sig"] = macd["MACDs_12_26_9"]
-				df["histogram"] = macd["MACDh_12_26_9"]
+				df["histogram"] = macd["MACDh_12_26_9"]'''
 				return df
 			except TypeError as err:
 				#print(TypeError,err)
