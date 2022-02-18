@@ -52,6 +52,7 @@ class MACDentry(Worker):
 				df.assign(macd = macd["MACD_12_26_9"],
 						sig = macd["MACDs_12_26_9"],
 						histogram = macd["MACDs_12_26_9"])
+				#!!!!!!  A VER QUE HACEMOS!
 				'''df["macd"] = macd["MACD_12_26_9"]
 				df["sig"] = macd["MACDs_12_26_9"]
 				df["histogram"] = macd["MACDh_12_26_9"]'''
