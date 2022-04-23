@@ -49,9 +49,13 @@ class MACDentry(Worker):
 			try:
 				macd = ta.macd(close=df["close"], fast=12, slow=26, signal=9, append=True)
 				#print(macd.to_string())
-				df["macd"] = macd["MACD_12_26_9"]
+				df.assign(macd = macd["MACD_12_26_9"],
+						sig = macd["MACDs_12_26_9"],
+						histogram = macd["MACDs_12_26_9"])
+				#!!!!!!  A VER QUE HACEMOS!
+				'''df["macd"] = macd["MACD_12_26_9"]
 				df["sig"] = macd["MACDs_12_26_9"]
-				df["histogram"] = macd["MACDh_12_26_9"]
+				df["histogram"] = macd["MACDh_12_26_9"]'''
 				return df
 			except TypeError as err:
 				#print(TypeError,err)
@@ -60,6 +64,26 @@ class MACDentry(Worker):
 		else:
 			#print("Dataframe Vacio, saltando")
 			return df
+	def extractRelevant(self,df):
+		if df.empty == True:
+			return [None, None]
+		else:
+			try:
+				relevant = [df["histogram"].iat[-2], df["histogram"].iat[-1]]
+				return relevant
+			except:
+				return [None,None]
+	def checkEntry(self, relevantDict):
+		if relevantDict["4h"] != [None, None] and relevantDict["1d"] != [None, None]: 
+			if relevantDict["4h"][0] <= 0 and relevantDict["4h"][1] > 0:
+				if relevantDict['1d'][0] < relevantDict['1d'][1]:
+					return True
+				else:
+					return False
+			else:
+				return False
+		else:
+			return False
 	def startWork(self):
 		"""Funcion que ejecuta el loop de entrada y valida los datos de la base de datos.
 		"""
@@ -73,39 +97,19 @@ class MACDentry(Worker):
 					if self.db.isTradeOpen(pair["symbol"]) == False:
 						#Solicitamos el dataframe correspondiente
 						df4h = self.calculate(self.db.getDataFrame(pair["symbol"], "4h"))
-						if df4h.empty == True:
-							#El dataframe puede estar vacio, o los datos mal formados o #######no se ha podido realizar el calculo.
-							pass
-						else:
-							try:
-								#He recibido errores raros. Por eso el except. A ver si lo pillo.
-								relevant4h = [df4h["histogram"].iat[-2],df4h["histogram"].iat[-1]]
-								
-								df1d = self.calculate(self.db.getDataFrame(pair["symbol"], "1d"))
-								if df1d.empty == True:
-									pass
-								else:
-									relevant1d = [df1d["histogram"].iat[-2],df1d["histogram"].iat[-1]]
-							except Exception as err:
-								'''print(Exception, err)
-								print(f"{pair['symbol']}")
-								print("ERROR RARO!")
-								last4h = None
-								print(df4h)'''
-								pass
-							# Aqui terminan las estructuras de control y empieza el algoritmo propiamente dicho.
-							if relevant4h != [None, None] and relevant1d != [None, None]: 
-								if relevant4h[0] <= 0 and relevant4h[1] > 0:
-									print(f"{pair['symbol']} 4h\n{relevant4h[0]}\n{relevant4h[1]}\n{pair['symbol']} 1d\n{relevant1d[0]}\n{relevant1d[1]}")
-									if relevant1d[0] < relevant1d[1]:
-										price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
-										tradeDict = {"pair": pair,
-													"symbol": pair["symbol"],
-													"price": price,
-													"entry": "MACDentry",
-													"exit": "TSL"}
-										self.openTrade(tradeDict)
-										self.logger.debug("Entrada detectada", extra=tradeDict)
+						df1d = self.calculate(self.db.getDataFrame(pair["symbol"], "1d"))
+						relevantDict = {"4h": self.extractRelevant(df4h),
+										"1d": self.extractRelevant(df1d)}
+						if self.checkEntry(relevantDict) == True:
+							print(f"{pair['symbol']} 4h\n{relevantDict['4h'][0]}\n{relevantDict['4h'][1]}\n{pair['symbol']} 1d\n{relevantDict['1d'][0]}\n{relevantDict['1d'][1]}")
+							price = Decimal(self.client.get_symbol_ticker(symbol=pair["symbol"])["price"])
+							tradeDict = {"pair": pair,
+										"symbol": pair["symbol"],
+										"price": price,
+										"entry": "MACDentry",
+										"exit": "TSL"}
+							self.openTrade(tradeDict)
+							self.logger.debug("Entrada detectada", extra=tradeDict)
 					else:
 						self.logger.debug("In Monitoring", extra={"symbol": pair["symbol"]})
 						pass

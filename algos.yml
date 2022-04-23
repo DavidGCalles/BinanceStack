@@ -4,7 +4,7 @@ services:
   macdentry:
     build:
       dockerfile: workerDev.dockerfile
-    command: entry-macd.py david
+    command: entry_macd.py david
     depends_on:
       - mariadb
       - dbworker
