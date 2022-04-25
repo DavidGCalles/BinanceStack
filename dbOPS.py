@@ -100,11 +100,11 @@ class DB:
 		self.port = 3306
 		self.database = "binance"
 	def tryConnect(self):
-		"""Tras mucho desarrollo he admitido que hace falta una función de conexion.
-		Aquí está. Ahora tengo que implementarla...
+		"""Función de conexión a db de conveniencia. Devuelve un bool en función de una conexion correcta o no.
+		El cursor y la conexion se almacenan en la propia instancia.
 
 		Returns:
-			cursor: cursor para realizar operaciones db, con conexion activa.
+			bool: Depende de la conexion correcta o no.
 		"""
 		try:
 			self.conn = mariadb.connect(
