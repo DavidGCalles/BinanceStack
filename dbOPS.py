@@ -115,9 +115,10 @@ class DB:
 				database=self.database
 				)
 			self.conn.autocommit = False
+			print(f"Conexion correcta a: {self.host}")
 			return True
 		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
+			print(f"Error conectando a mariadb: {e}")
 			return False
 
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
@@ -180,43 +181,35 @@ class DB:
 			data (dict): Diccionario directo desde la API de binance. Esta funcion es llamada por cada par
 			en los datos resultantes del exchange. 
 		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		minNotional = "-"
-		minQty = "-"
-		stepSize = "-"
-		precision = "-"
-		for filt in data["filters"]:
-			if filt["filterType"] == "MIN_NOTIONAL":
-				minNotional = filt["minNotional"]
-			elif filt["filterType"] == "LOT_SIZE":
-				minQty = filt["minQty"]
-				stepSize = filt["stepSize"]
-		try:
-			precision = data["baseAssetPrecision"]
-		except KeyError:
-			pass
-		queryARR = ["'"+data["symbol"]+"'",
-					"'"+minNotional+"'",
-					"'"+minQty+"'",
-					"'"+stepSize+"'",
-					str(precision)]
-		querySTR = ",".join(queryARR)
-		#st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize, precision) VALUES ({querySTR});"
-		st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize) VALUES ('{data['symbol']}','{minNotional}','{minQty}','{stepSize}')"
-		#print(st)
-		cur.execute(st)
-		conn.commit()
-		conn.close()
+		if self.tryConnect():
+			minNotional = "-"
+			minQty = "-"
+			stepSize = "-"
+			precision = "-"
+			for filt in data["filters"]:
+				if filt["filterType"] == "MIN_NOTIONAL":
+					minNotional = filt["minNotional"]
+				elif filt["filterType"] == "LOT_SIZE":
+					minQty = filt["minQty"]
+					stepSize = filt["stepSize"]
+			try:
+				precision = data["baseAssetPrecision"]
+			except KeyError:
+				pass
+			queryARR = ["'"+data["symbol"]+"'",
+						"'"+minNotional+"'",
+						"'"+minQty+"'",
+						"'"+stepSize+"'",
+						str(precision)]
+			querySTR = ",".join(queryARR)
+			#st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize, precision) VALUES ({querySTR});"
+			st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize) VALUES ('{data['symbol']}','{minNotional}','{minQty}','{stepSize}')"
+			#print(st)
+			self.conn.cur.execute(st)
+			self.conn.commit()
+			self.conn.close()
+		else:
+			print("Imposible")
 	def getLastPoint(self,symbol,intervalData, dataTable = ""):
 		"""Obtiene el punto mas reciente de las tablas de datos, del symbolo requerido.
 		Esta función se usa para determinar los rangos de datos solicitados a la API de
