@@ -685,6 +685,9 @@ class DB:
 class Symbol(DB):
 	def __init__(self):
 		super().__init__()
+		self.requiriedData = {"minNotional":"",
+							"minQty": "",
+							"stepSize": ""}
 	def parseRaw(self, rawData):
 		for filt in rawData["filters"]:
 			if filt["filterType"] == "MIN_NOTIONAL":
@@ -693,9 +696,14 @@ class Symbol(DB):
 				self.minQty = filt["minQty"]
 				self.stepSize = filt["stepSize"]
 			try:
-				precision = data["baseAssetPrecision"]
+				self.precision = data["baseAssetPrecision"]
 			except KeyError:
 				pass
+
+class User(DB):
+	def __init__(self, userName, pwd):
+		super().__init__(self)
+
 if __name__ == "__main__":
 	db1 = DB()
 
