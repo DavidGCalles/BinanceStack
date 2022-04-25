@@ -682,6 +682,20 @@ class DB:
 			self.conn.close()
 			print("Eliminando ABIERTO")
 
+class Symbol(DB):
+	def __init__(self):
+		super().__init__()
+	def parseRaw(self, rawData):
+		for filt in rawData["filters"]:
+			if filt["filterType"] == "MIN_NOTIONAL":
+				self.minNotional = filt["minNotional"]
+			elif filt["filterType"] == "LOT_SIZE":
+				self.minQty = filt["minQty"]
+				self.stepSize = filt["stepSize"]
+			try:
+				precision = data["baseAssetPrecision"]
+			except KeyError:
+				pass
 if __name__ == "__main__":
 	db1 = DB()
 
