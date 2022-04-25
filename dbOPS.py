@@ -100,11 +100,11 @@ class DB:
 		self.port = 3306
 		self.database = "binance"
 	def tryConnect(self):
-		"""Tras mucho desarrollo he admitido que hace falta una función de conexion.
-		Aquí está. Ahora tengo que implementarla...
+		"""Función de conexión a db de conveniencia. Devuelve un bool en función de una conexion correcta o no.
+		El cursor y la conexion se almacenan en la propia instancia.
 
 		Returns:
-			cursor: cursor para realizar operaciones db, con conexion activa.
+			bool: Depende de la conexion correcta o no.
 		"""
 		try:
 			self.conn = mariadb.connect(
@@ -114,10 +114,12 @@ class DB:
 				port=self.port,
 				database=self.database
 				)
+			self.conn.autocommit = False
+			return True
 		except mariadb.Error as e:
-				print(f"Error connecting to MariaDB Platform: {e}")
-		self.conn.autocommit = False
-		return self.conn.cursor()
+			print(f"Error connecting to MariaDB Platform: {e}")
+			return False
+
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
 		Recibe una fecha de entrada y salida para saber los datos requeridos. También implementa
