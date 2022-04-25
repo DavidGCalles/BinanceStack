@@ -114,10 +114,12 @@ class DB:
 				port=self.port,
 				database=self.database
 				)
+			self.conn.autocommit = False
+			return True
 		except mariadb.Error as e:
-				print(f"Error connecting to MariaDB Platform: {e}")
-		self.conn.autocommit = False
-		return self.conn.cursor()
+			print(f"Error connecting to MariaDB Platform: {e}")
+			return False
+
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
 		Recibe una fecha de entrada y salida para saber los datos requeridos. También implementa
