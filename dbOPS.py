@@ -11,6 +11,8 @@ from requests import exceptions as Rexceptions
 from urllib3 import exceptions as Uexceptions
 import pandas as pd
 import numpy as np
+from binance.client import Client
+
 
 """Lista de assets con los que se va a hacer trading. Esto limita la cantidad de pares almacenados desde el exchange a aquellos
 que tengan estas monedas como base (segundo componente)
@@ -116,6 +118,7 @@ class DB:
 				)
 			self.conn.autocommit = False
 			print(f"Conexion correcta a: {self.host}")
+			self.cur = self.conn.cursor()
 			return True
 		except mariadb.Error as e:
 			print(f"Error conectando a mariadb: {e}")
@@ -685,24 +688,81 @@ class DB:
 class Symbol(DB):
 	def __init__(self):
 		super().__init__()
-		self.requiriedData = {"minNotional":"",
+		self.requiriedData = {"symbol": "",
+							"minNotional":"",
 							"minQty": "",
 							"stepSize": ""}
+	def _checkRequiried(self):
+		for key in self.requiriedData:
+			if self.requiriedData[key] is not "":
+				pass
+			else:
+				return False
+		return True
 	def parseRaw(self, rawData):
+		self.requiriedData["symbol"] = rawData["symbol"]
 		for filt in rawData["filters"]:
 			if filt["filterType"] == "MIN_NOTIONAL":
-				self.minNotional = filt["minNotional"]
+				self.requiriedData["minNotional"] = Decimal(filt["minNotional"])
 			elif filt["filterType"] == "LOT_SIZE":
-				self.minQty = filt["minQty"]
-				self.stepSize = filt["stepSize"]
-			try:
-				self.precision = data["baseAssetPrecision"]
-			except KeyError:
-				pass
+				self.requiriedData["minQty"] = Decimal(filt["minQty"])
+				self.requiriedData["stepSize"] = Decimal(filt["stepSize"])
+		return self._checkRequiried()
+	def parseSQL(self, sqlData):
+		self.requiriedData["symbol"] = sqlData[0]
+		self.requiriedData["minNotional"] = Decimal(sqlData[1])
+		self.requiriedData["minQty"] = Decimal(sqlData[2])
+		self.requiriedData["stepSize"] = Decimal(sqlData[3])
+		return self._checkRequiried()
+	def _insertSymbol(self):
+		if self.tryConnect():
+			st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize) VALUES ('{self.requiriedData['symbol']}','{self.requiriedData['minNotional']}','{self.requiriedData['minQty']}','{self.requiriedData['stepSize']}')"
+			#print(st)
+			self.cur.execute(st)
+			self.conn.commit()
+			self.conn.close()
+			print(f"Registro insertado: {self.requiriedData['symbol']}")
+			return True
+		else:
+			print(f"Imposible insertar el registro: {self.requiriedData['symbol']}")
+			return False
+	def _deleteSymbol(self):
+		if self.tryConnect():
+			st = f"DELETE FROM symbols WHERE symbol='{self.requiriedData['symbol']}'"
+			#print(st)
+			self.cur.execute(st)
+			self.conn.commit()
+			self.conn.close()
+			print(f"Registro borrado: {self.requiriedData['symbol']}")
+			return True
+		else:
+			print(f"Imposible borrar el registro: {self.requiriedData['symbol']}")
+			return False
+
+
 
 class User(DB):
-	def __init__(self, userName, pwd):
-		super().__init__(self)
+	def __init__(self, userName, pwd = ""):
+		super().__init__()
+		self.userName = userName
+		self.apiKeys = []
+	def stage1(self):
+		self.getAPIkeys()
+		self.client = Client(self.apiKeys[0],self.apiKeys[1])
+	def getAPIkeys(self):
+		if self.tryConnect():
+			st = f"SELECT * FROM users WHERE name='{self.userName}'"
+			self.cur.execute(st)
+			self.apiKeys=[]
+			for idAPI in self.cur:
+				self.apiKeys.append(idAPI[1])
+				self.apiKeys.append(idAPI[2])
+			self.conn.close()
+			print("Credenciales obtenidas de DB")
+			return True
+		else:
+			print("Imposible obtener credenciales")
+			return False
 
 if __name__ == "__main__":
 	db1 = DB()
