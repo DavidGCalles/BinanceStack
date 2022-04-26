@@ -4,7 +4,7 @@ CREATE TABLE IF NOT EXISTS `binance`.`users` (
   `secret` VARCHAR(255) NOT NULL ,
   `mail` VARCHAR(255) NOT NULL ) ENGINE = InnoDB;
 CREATE TABLE IF NOT EXISTS `symbols` (
-  `symbol` VARCHAR(50) NOT NULL ,
+  `symbol` VARCHAR(50) PRIMARY KEY NOT NULL ,
   `minNotional` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
   `minQty` DECIMAL(40,8) NOT NULL DEFAULT '0' ,
   `stepSize` DECIMAL(40,8) NOT NULL DEFAULT '0' ,

@@ -117,7 +117,7 @@ class DB:
 				database=self.database
 				)
 			self.conn.autocommit = False
-			print(f"Conexion correcta a: {self.host}")
+			#print(f"Conexion correcta a: {self.host}")
 			self.cur = self.conn.cursor()
 			return True
 		except mariadb.Error as e:
@@ -714,14 +714,14 @@ class Symbol(DB):
 		self.requiriedData["minQty"] = Decimal(sqlData[2])
 		self.requiriedData["stepSize"] = Decimal(sqlData[3])
 		return self._checkRequiried()
-	def _insertSymbol(self):
+	def insertSymbol(self):
 		if self.tryConnect():
 			st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize) VALUES ('{self.requiriedData['symbol']}','{self.requiriedData['minNotional']}','{self.requiriedData['minQty']}','{self.requiriedData['stepSize']}')"
 			#print(st)
 			self.cur.execute(st)
 			self.conn.commit()
 			self.conn.close()
-			print(f"Registro insertado: {self.requiriedData['symbol']}")
+			#print(f"Registro insertado: {self.requiriedData['symbol']}")
 			return True
 		else:
 			print(f"Imposible insertar el registro: {self.requiriedData['symbol']}")
@@ -730,11 +730,17 @@ class Symbol(DB):
 		if self.tryConnect():
 			st = f"DELETE FROM symbols WHERE symbol='{self.requiriedData['symbol']}'"
 			#print(st)
-			self.cur.execute(st)
-			self.conn.commit()
-			self.conn.close()
-			print(f"Registro borrado: {self.requiriedData['symbol']}")
-			return True
+			try:
+				self.cur.execute(st)
+				self.conn.commit()
+				print(self.cur.rowcount)
+				self.conn.close()
+				return True
+			except mariadb.Error as e:
+				print(f"Error: {e}")
+				self.conn.close()
+				return False
+			#print(f"Registro borrado: {self.requiriedData['symbol']}")
 		else:
 			print(f"Imposible borrar el registro: {self.requiriedData['symbol']}")
 			return False
@@ -758,7 +764,7 @@ class User(DB):
 				self.apiKeys.append(idAPI[1])
 				self.apiKeys.append(idAPI[2])
 			self.conn.close()
-			print("Credenciales obtenidas de DB")
+			#print("Credenciales obtenidas de DB")
 			return True
 		else:
 			print("Imposible obtener credenciales")
