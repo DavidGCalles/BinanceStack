@@ -138,11 +138,15 @@ class DB:
 			self.cur.execute("SELECT * FROM symbols")
 			clean = []
 			#Itera sobre la lista obtenida de la base de datos y convierte las tuplas de un solo elemento en cadenas.
-			for i in cur:
-				sym = Symbol().parseSQL(i)
+			for i in self.cur:
+				sym = Symbol()
+				sym.parseSQL(i)
 				clean.append(sym)
-			conn.close()
+			self.conn.close()
 			return clean
+		else:
+			print("Imposible acceder a db")
+			return []
 	#! Metodos antiguos
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
