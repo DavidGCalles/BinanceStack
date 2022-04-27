@@ -11,6 +11,8 @@ from requests import exceptions as Rexceptions
 from urllib3 import exceptions as Uexceptions
 import pandas as pd
 import numpy as np
+from binance.client import Client
+
 
 """Lista de assets con los que se va a hacer trading. Esto limita la cantidad de pares almacenados desde el exchange a aquellos
 que tengan estas monedas como base (segundo componente)
@@ -99,6 +101,7 @@ class DB:
 		self.host = "mariadb"
 		self.port = 3306
 		self.database = "binance"
+	#! Metodos basicos de DB (se heredaran y utilizaran en clases derivadas tal cual)
 	def tryConnect(self):
 		"""Función de conexión a db de conveniencia. Devuelve un bool en función de una conexion correcta o no.
 		El cursor y la conexion se almacenan en la propia instancia.
@@ -115,11 +118,32 @@ class DB:
 				database=self.database
 				)
 			self.conn.autocommit = False
+			#print(f"Conexion correcta a: {self.host}")
+			self.cur = self.conn.cursor()
 			return True
 		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
+			print(f"Error conectando a mariadb: {e}")
 			return False
+	#! Metodos de administración y limpieza.
+	def getSymbols(self):
+		"""Obtiene una lista de pares limpia de la base de datos.
+		Requiere tratamiento porque la base de datos devuelve tuplas.
+		El tratamiento convierte las tuplas en diccionarios de mas facil utilización.
 
+		Returns:
+			[List]: Lista con todos los simbolos en formato diccionario y sus
+			reglas de trading.
+		"""
+		if self.tryConnect():
+			self.cur.execute("SELECT * FROM symbols")
+			clean = []
+			#Itera sobre la lista obtenida de la base de datos y convierte las tuplas de un solo elemento en cadenas.
+			for i in cur:
+				sym = Symbol().parseSQL(i)
+				clean.append(sym)
+			conn.close()
+			return clean
+	#! Metodos antiguos
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
 		Recibe una fecha de entrada y salida para saber los datos requeridos. También implementa
@@ -168,55 +192,7 @@ class DB:
 			cur.execute(query)
 			conn.commit()'''
 		self.conn.close()
-	def _insertSymbol(self, data):
-		"""Funcion para insertar los simbolos y sus datos en la tabla Symbols.
 
-		He tenido que prescindir de actualizar el valor "precision" porque me daba errores SQL que no
-		podia solucionar.
-		#? Trabajar en esto. Algun dia tendremos que saber porque sucede o necesitaremos ese valor. SEGURO.
-		#! Era una cuestión de palabras reservadas. Se puede usar precision tal y como esta ahora.
-
-		Args:
-			data (dict): Diccionario directo desde la API de binance. Esta funcion es llamada por cada par
-			en los datos resultantes del exchange. 
-		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		minNotional = "-"
-		minQty = "-"
-		stepSize = "-"
-		precision = "-"
-		for filt in data["filters"]:
-			if filt["filterType"] == "MIN_NOTIONAL":
-				minNotional = filt["minNotional"]
-			elif filt["filterType"] == "LOT_SIZE":
-				minQty = filt["minQty"]
-				stepSize = filt["stepSize"]
-		try:
-			precision = data["baseAssetPrecision"]
-		except KeyError:
-			pass
-		queryARR = ["'"+data["symbol"]+"'",
-					"'"+minNotional+"'",
-					"'"+minQty+"'",
-					"'"+stepSize+"'",
-					str(precision)]
-		querySTR = ",".join(queryARR)
-		#st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize, precision) VALUES ({querySTR});"
-		st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize) VALUES ('{data['symbol']}','{minNotional}','{minQty}','{stepSize}')"
-		#print(st)
-		cur.execute(st)
-		conn.commit()
-		conn.close()
 	def getLastPoint(self,symbol,intervalData, dataTable = ""):
 		"""Obtiene el punto mas reciente de las tablas de datos, del symbolo requerido.
 		Esta función se usa para determinar los rangos de datos solicitados a la API de
@@ -265,34 +241,7 @@ class DB:
 		df = pd.DataFrame(pdQuery, columns=["openTime","symbol","open","high","low","close"])
 		self.conn.close()
 		return df
-	def getSymbols(self):
-		"""Obtiene una lista de pares limpia de la base de datos.
-		Requiere tratamiento porque la base de datos devuelve tuplas.
-		El tratamiento convierte las tuplas en diccionarios de mas facil utilización.
-
-		Returns:
-			[List]: Lista con todos los simbolos en formato diccionario y sus
-			reglas de trading.
-		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		cur.execute("SELECT * FROM symbols")
-		clean = []
-		#Itera sobre la lista obtenida de la base de datos y convierte las tuplas de un solo elemento en cadenas.
-		for i in cur:
-			d = parseSymbol(i)
-			clean.append(d)
-		conn.close()
-		return clean
+	
 	def updateSymbols(self, client):
 		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
 		o elimina los que ya estan fuera de lista.
@@ -385,35 +334,6 @@ class DB:
 				conn.commit()'''
 		#################################
 		conn.close()
-	def getAPI(self, user):
-		"""Obtiene la clave de api y secreto de un usuario desde la tabla users.
-		Además, incluye las configuraciones relacionadas con ese usuario.
-		#! Atencion, altamente inseguro. Simplemente queria que funcionase.
-
-		Args:
-			user (string): Nombre del usuario.
-
-		Returns:
-			[list]: Lista compuesta de [API_KEY, API_SECRET, CONFIG] en cadenas.
-		"""
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		st = f"SELECT * FROM users WHERE name='{user}'"
-		cur.execute(st)
-		apiKEYS=[]
-		for idAPI in cur:
-			apiKEYS.append(idAPI[1])
-			apiKEYS.append(idAPI[2])
-		conn.close()
-		return apiKEYS
 	def getOlderServe(self, serveType):
 		"""Recupera la fecha más antigua de servicio de un par en la tabla symbols.
 		Para más información sobre como funcionan los timers de servicio, referirse
@@ -688,6 +608,96 @@ class DB:
 			self.conn.commit()
 			self.conn.close()
 			print("Eliminando ABIERTO")
+
+class Symbol(DB):
+	def __init__(self):
+		super().__init__()
+		self.requiriedData = {"symbol": "",
+							"minNotional":"",
+							"minQty": "",
+							"stepSize": ""}
+	def _checkRequiried(self):
+		for key in self.requiriedData:
+			if self.requiriedData[key] is not "":
+				pass
+			else:
+				return False
+		return True
+	def parseRaw(self, rawData):
+		self.requiriedData["symbol"] = rawData["symbol"]
+		for filt in rawData["filters"]:
+			if filt["filterType"] == "MIN_NOTIONAL":
+				self.requiriedData["minNotional"] = Decimal(filt["minNotional"])
+			elif filt["filterType"] == "LOT_SIZE":
+				self.requiriedData["minQty"] = Decimal(filt["minQty"])
+				self.requiriedData["stepSize"] = Decimal(filt["stepSize"])
+		return self._checkRequiried()
+	def parseSQL(self, sqlData):
+		self.requiriedData["symbol"] = sqlData[0]
+		self.requiriedData["minNotional"] = Decimal(sqlData[1])
+		self.requiriedData["minQty"] = Decimal(sqlData[2])
+		self.requiriedData["stepSize"] = Decimal(sqlData[3])
+		return self._checkRequiried()
+	def insertSymbol(self):
+		if self.tryConnect():
+			st = f"INSERT INTO symbols (symbol, minNotional, minQty, stepSize) VALUES ('{self.requiriedData['symbol']}','{self.requiriedData['minNotional']}','{self.requiriedData['minQty']}','{self.requiriedData['stepSize']}')"
+			#print(st)
+			try:
+				self.cur.execute(st)
+				self.conn.commit()
+				self.conn.close()
+				#print(f"Registro insertado: {self.requiriedData['symbol']}")
+				return True
+			except mariadb.Error as e:
+				print(f"Error: {e}")
+				print(f"Imposible insertar el registro: {self.requiriedData['symbol']}")
+				self.conn.close()
+				return False
+		else:
+			print(f"Imposible insertar el registro: {self.requiriedData['symbol']}")
+			return False
+	def deleteSymbol(self):
+		if self.tryConnect():
+			st = f"DELETE FROM symbols WHERE symbol='{self.requiriedData['symbol']}'"
+			#print(st)
+			try:
+				self.cur.execute(st)
+				self.conn.commit()
+				#print(self.cur.rowcount) #! Este atributo del cursor nos puede servir para afinar la respuesta de la db a la operación.
+				self.conn.close()
+				return True
+			except mariadb.Error as e:
+				print(f"Error: {e}")
+				self.conn.close()
+				print(f"Imposible borrar el registro: {self.requiriedData['symbol']}")
+				return False
+			#print(f"Registro borrado: {self.requiriedData['symbol']}")
+		else:
+			print(f"Imposible borrar el registro: {self.requiriedData['symbol']}")
+			return False
+
+class User(DB):
+	def __init__(self, userName, pwd = ""):
+		super().__init__()
+		self.userName = userName
+		self.apiKeys = []
+	def stage1(self):
+		self.getAPIkeys()
+		self.client = Client(self.apiKeys[0],self.apiKeys[1])
+	def getAPIkeys(self):
+		if self.tryConnect():
+			st = f"SELECT * FROM users WHERE name='{self.userName}'"
+			self.cur.execute(st)
+			self.apiKeys=[]
+			for idAPI in self.cur:
+				self.apiKeys.append(idAPI[1])
+				self.apiKeys.append(idAPI[2])
+			self.conn.close()
+			#print("Credenciales obtenidas de DB")
+			return True
+		else:
+			print("Imposible obtener credenciales")
+			return False
 
 if __name__ == "__main__":
 	db1 = DB()
