@@ -23,6 +23,10 @@ class Test_integration_dbClass(unittest.TestCase):
 	def test_tryConnect(self):
 		db = dbOPS.DB()
 		self.assertEqual(db.tryConnect(), True)
+	def test_getSymbols(self):
+		db = dbOPS.DB()
+		symbolArray = db.getSymbols()
+		self.assertGreater(len(symbolArray), 0,"Conexion correcta pero respuesta vacia.")
 
 class Test_integration_symbolClass(unittest.TestCase):
 	print("--Integration--Symbol")
