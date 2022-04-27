@@ -144,45 +144,52 @@ class DB:
 		else:
 			print("Imposible acceder a db")
 			return []
+	def _compareSymbols(self, origin, remote):
+		changes = {"add": [],
+				"remove": []}
+		for symOrigin in origin:
+			#Se empieza con la asuncion de que no existe en la tabla remota
+			inRemote = False
+			for symRemote in remote:
+				#Si se comprueba que el simbolo coincide, se actualiza la variable de control
+				if symOrigin.requiriedData["symbol"] == symRemote.requiriedData["symbol"]:
+					inRemote = True
+			#Si despues de comprobar la tabla remota, el simbolo no coincide, eliminar de la tabla de origen.
+			if inRemote == False:
+				changes["remove"].append(symOrigin)
+		###Bucle de elementos a añadir.
+		for symRemote in remote:
+			inOrigin = False
+			for symOrigin in origin:
+				if symRemote.requiriedData["symbol"] == symOrigin.requiriedData["symbol"]:
+					inOrigin = True
+			if inOrigin == False:
+				changes["add"].append(symRemote)
+		return changes
 	def updateSymbols(self, userClient):
 		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
 		o elimina los que ya estan fuera de lista.
 
 		Args:
-			client (binance.Client): Cliente binance para solicitar los pares del exchange.
+			userClient (binance.Client): Cliente binance para solicitar los pares del exchange.
 		"""
 		symDict = self.getSymbols()
-		exchDict = userClient.get_exchange_info()["symbols"]
-		#######DELISTED LOOP######
-		delisted = []
-		for sym in symDict:
-			inList = False
-			for ex in exchDict:
-				if sym["symbol"] == ex["symbol"]:
-					inList = True
-			if inList == False:
-				delisted.append(sym["symbol"])
-		if len(delisted) > 0:
-			for sym in delisted:
-				st = f"DELETE FROM symbols WHERE symbol='{sym}'"
-				#print(st)
-				cur.execute(st)
-				conn.commit()
-		print(f"Delisted: {delisted}")
-		#############################
-		#######NEWLISTED LOOP########
-		newlisted = []
-		for ex in exchDict:
-			inList = False
-			for sym in symDict:
-				if ex["symbol"] == sym["symbol"]:
-					inList = True
-			if inList == False and ex["symbol"][-3:] in TRADEABLE_ASSETS:
-				newlisted.append(ex["symbol"])
-				#print(ex)
-				self._insertSymbol(ex)
-		print(f"New Listed: {newlisted}")
-		conn.close()
+		exchRaw = userClient.get_exchange_info()["symbols"]
+		exchList = []
+		for sym in exchRaw:
+			s = Symbol()
+			if s.parseRaw(sym):
+				exchList.append(s)
+			else:
+				return False
+		diff = self._compareSymbols(symDict, exchList)
+		for item in diff["add"]:
+			if item.insertSymbol() == False:
+				return False
+		for item in diff["remove"]:
+			if item.deleteSymbol() == False:
+				return False
+		return True
 	#! Metodos antiguos
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
