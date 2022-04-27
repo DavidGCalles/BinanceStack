@@ -1,18 +1,19 @@
 #!/usr/bin/env python3
 
+import socket
 import sqlite3
-from binance.client import Client
 from datetime import datetime
 from decimal import Decimal
-import mariadb
+
 import dateparser
-import socket
+import logging
+import ecs_logging
+import mariadb
+import numpy as np
+import pandas as pd
+from binance.client import Client
 from requests import exceptions as Rexceptions
 from urllib3 import exceptions as Uexceptions
-import pandas as pd
-import numpy as np
-from binance.client import Client
-
 
 """Lista de assets con los que se va a hacer trading. Esto limita la cantidad de pares almacenados desde el exchange a aquellos
 que tengan estas monedas como base (segundo componente)
@@ -101,6 +102,13 @@ class DB:
 		self.host = "mariadb"
 		self.port = 3306
 		self.database = "binance"
+		#LOGGING
+		self.logger = logging.getLogger("dbLogger")
+		self.logger.setLevel(logging.DEBUG)
+		if len(self.logger.handlers) == 0:
+			handler = logging.FileHandler(f"logs/dbLogger.json")
+			handler.setFormatter(ecs_logging.StdlibFormatter())
+			self.logger.addHandler(handler)
 	#! Metodos basicos de DB (se heredaran y utilizaran en clases derivadas tal cual)
 	def tryConnect(self):
 		"""Función de conexión a db de conveniencia. Devuelve un bool en función de una conexion correcta o no.
@@ -118,11 +126,11 @@ class DB:
 				database=self.database
 				)
 			self.conn.autocommit = False
-			#print(f"Conexion correcta a: {self.host}")
+			self.logger.debug(f"Conexion correcta a: {self.host}")
 			self.cur = self.conn.cursor()
 			return True
 		except mariadb.Error as e:
-			print(f"Error conectando a mariadb: {e}")
+			self.logger.critical(f"Error conectando a mariadb: {e}")
 			return False
 	#! Metodos de administración y limpieza.
 	def getSymbols(self):
@@ -137,12 +145,15 @@ class DB:
 			#Itera sobre la lista obtenida de la base de datos y convierte las tuplas de un solo elemento en cadenas.
 			for i in self.cur:
 				sym = Symbol()
-				sym.parseSQL(i)
-				clean.append(sym)
+				if sym.parseSQL(i):
+					clean.append(sym)
+				else:
+					pass
+			self.logger.debug(f"{len(clean)} objetos recuperados de {self.host}")
 			self.conn.close()
 			return clean
 		else:
-			print("Imposible acceder a db")
+			self.logger.critical(f"Imposible acceder a {self.host}")
 			return []
 	def _compareSymbols(self, origin, remote):
 		changes = {"add": [],
@@ -165,6 +176,7 @@ class DB:
 					inOrigin = True
 			if inOrigin == False:
 				changes["add"].append(symRemote)
+		self.logger.info("Comparacion terminada", extra={"data": changes})
 		return changes
 	def updateSymbols(self, userClient):
 		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
@@ -181,14 +193,18 @@ class DB:
 			if s.parseRaw(sym):
 				exchList.append(s)
 			else:
+				self.logger.critical("Operacion detenida. Ha habido un error en el parser.", extra={"data": sym})
 				return False
 		diff = self._compareSymbols(symDict, exchList)
 		for item in diff["add"]:
 			if item.insertSymbol() == False:
+				self.logger.critical("Operacion detenida. Ha habido un error insertando el elemento.", extra={"data": item.requiriedData["symbol"]})
 				return False
 		for item in diff["remove"]:
 			if item.deleteSymbol() == False:
+				self.logger.critical("Operacion detenida. Ha habido un error eliminando el elemento.", extra={"data": item.requiriedData["symbol"]})
 				return False
+		self.logger.info("Tabla actualizada correctamente")
 		return True
 	#! Metodos antiguos
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
@@ -576,7 +592,9 @@ class Symbol(DB):
 			if self.requiriedData[key] is not "":
 				pass
 			else:
+				self.logger.critical(f"Datos requeridos ausentes", extra={"data": key})
 				return False
+		self.logger.debug("Parsed OK", extra={"data":self.requiriedData["symbol"]})
 		return True
 	def parseRaw(self, rawData):
 		self.requiriedData["symbol"] = rawData["symbol"]
@@ -601,23 +619,23 @@ class Symbol(DB):
 				self.cur.execute(st)
 				self.conn.commit()
 				self.conn.close()
-				#print(f"Registro insertado: {self.requiriedData['symbol']}")
+				self.logger.info(f"Registro insertado.", extra={"data":self.requiriedData['symbol']})
 				return True
 			except mariadb.Error as e:
-				print(f"Error: {e}")
-				print(f"Imposible insertar el registro: {self.requiriedData['symbol']}")
+				self.logger.error(e)
+				self.logger.critical(f"Imposible insertar el registro.", extra={"data":self.requiriedData['symbol']})
 				self.conn.close()
 				return False
 		else:
-			print(f"Imposible insertar el registro: {self.requiriedData['symbol']}")
+			self.logger.critical(f"Imposible insertar el registro.", extra={"data":self.requiriedData['symbol']})
 			return False
 	def deleteSymbol(self):
 		if self.tryConnect():
 			st = f"DELETE FROM symbols WHERE symbol='{self.requiriedData['symbol']}'"
-			#print(st)
 			try:
 				self.cur.execute(st)
 				self.conn.commit()
+				self.logger.info(f"Registro borrado.", extra={"data":self.requiriedData['symbol']})
 				#print(self.cur.rowcount) #! Este atributo del cursor nos puede servir para afinar la respuesta de la db a la operación.
 				self.conn.close()
 				return True
@@ -626,9 +644,9 @@ class Symbol(DB):
 				self.conn.close()
 				print(f"Imposible borrar el registro: {self.requiriedData['symbol']}")
 				return False
-			#print(f"Registro borrado: {self.requiriedData['symbol']}")
 		else:
-			print(f"Imposible borrar el registro: {self.requiriedData['symbol']}")
+			self.logger.error(e)
+			self.logger.critical(f"Imposible borrar el registro.", extra={"data":self.requiriedData['symbol']})
 			return False
 
 class User(DB):
@@ -648,10 +666,10 @@ class User(DB):
 				self.apiKeys.append(idAPI[1])
 				self.apiKeys.append(idAPI[2])
 			self.conn.close()
-			#print("Credenciales obtenidas de DB")
+			self.logger.debug("Credenciales obtenidas")
 			return True
 		else:
-			print("Imposible obtener credenciales")
+			self.logger.critical("Imposible obtener credenciales.")
 			return False
 
 if __name__ == "__main__":
