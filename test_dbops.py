@@ -26,14 +26,15 @@ class Test_integration_dbClass(unittest.TestCase):
 
 class Test_integration_symbolClass(unittest.TestCase):
 	print("--Integration--Symbol")
-	'''def test_insertSymbol(self):
+	def test_insert_delete_Symbol(self):
 		inst = dbOPS.Symbol()
 		inst.parseRaw(dictMockInput)
-		self.assertEqual(inst.insertSymbol(), True)'''
-	def test_deleteSymbol(self):
-		inst = dbOPS.Symbol()
-		inst.parseRaw(dictMockInput)
-		self.assertEqual(inst._deleteSymbol(), True)
+		##Insertamos el simbolo mock
+		self.assertEqual(inst.insertSymbol(), True)
+		##Volvemos a intentar insertarlo para gestionar el error de duplicados correctamente
+		self.assertEqual(inst.insertSymbol(), False)
+		##Borramos el simbolo mock
+		self.assertEqual(inst.deleteSymbol(), True)
 
 class Test_symbolClass(unittest.TestCase):
 	print("--Unit--Symbol")
