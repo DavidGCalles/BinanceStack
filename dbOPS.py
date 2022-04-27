@@ -126,13 +126,10 @@ class DB:
 			return False
 	#! Metodos de administración y limpieza.
 	def getSymbols(self):
-		"""Obtiene una lista de pares limpia de la base de datos.
-		Requiere tratamiento porque la base de datos devuelve tuplas.
-		El tratamiento convierte las tuplas en diccionarios de mas facil utilización.
+		"""Obtiene todos los pares de trading de la base de datos.
 
 		Returns:
-			[List]: Lista con todos los simbolos en formato diccionario y sus
-			reglas de trading.
+			[List]: Lista con todos los simbolos en instancias Symbol.
 		"""
 		if self.tryConnect():
 			self.cur.execute("SELECT * FROM symbols")
@@ -147,6 +144,52 @@ class DB:
 		else:
 			print("Imposible acceder a db")
 			return []
+	def _compareSymbols(self, origin, remote):
+		changes = {"add": [],
+				"remove": []}
+		for symOrigin in origin:
+			#Se empieza con la asuncion de que no existe en la tabla remota
+			inRemote = False
+			for symRemote in remote:
+				#Si se comprueba que el simbolo coincide, se actualiza la variable de control
+				if symOrigin.requiriedData["symbol"] == symRemote.requiriedData["symbol"]:
+					inRemote = True
+			#Si despues de comprobar la tabla remota, el simbolo no coincide, eliminar de la tabla de origen.
+			if inRemote == False:
+				changes["remove"].append(symOrigin)
+		###Bucle de elementos a añadir.
+		for symRemote in remote:
+			inOrigin = False
+			for symOrigin in origin:
+				if symRemote.requiriedData["symbol"] == symOrigin.requiriedData["symbol"]:
+					inOrigin = True
+			if inOrigin == False:
+				changes["add"].append(symRemote)
+		return changes
+	def updateSymbols(self, userClient):
+		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
+		o elimina los que ya estan fuera de lista.
+
+		Args:
+			userClient (binance.Client): Cliente binance para solicitar los pares del exchange.
+		"""
+		symDict = self.getSymbols()
+		exchRaw = userClient.get_exchange_info()["symbols"]
+		exchList = []
+		for sym in exchRaw:
+			s = Symbol()
+			if s.parseRaw(sym):
+				exchList.append(s)
+			else:
+				return False
+		diff = self._compareSymbols(symDict, exchList)
+		for item in diff["add"]:
+			if item.insertSymbol() == False:
+				return False
+		for item in diff["remove"]:
+			if item.deleteSymbol() == False:
+				return False
+		return True
 	#! Metodos antiguos
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
 		"""Metodo para insertar datos desde la API de binance a las tablas data_4h y data_1d.
@@ -246,98 +289,6 @@ class DB:
 		self.conn.close()
 		return df
 	
-	def updateSymbols(self, client):
-		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
-		o elimina los que ya estan fuera de lista.
-
-		Args:
-			client (binance.Client): Cliente binance para solicitar los pares del exchange.
-		"""
-		symDict = self.getSymbols()
-		exchDict = client.get_exchange_info()["symbols"]
-		try:
-			conn = mariadb.connect(
-				user=self.user,
-				password=self.password,
-				host=self.host,
-				port=self.port,
-				database=self.database
-				)
-		except mariadb.Error as e:
-			print(f"Error connecting to MariaDB Platform: {e}")
-		cur = conn.cursor()
-		#######DELISTED LOOP######
-		delisted = []
-		for sym in symDict:
-			inList = False
-			for ex in exchDict:
-				if sym["symbol"] == ex["symbol"]:
-					inList = True
-			if inList == False:
-				delisted.append(sym["symbol"])
-		if len(delisted) > 0:
-			for sym in delisted:
-				st = f"DELETE FROM symbols WHERE symbol='{sym}'"
-				#print(st)
-				cur.execute(st)
-				conn.commit()
-		print(f"Delisted: {delisted}")
-		#############################
-		#######NEWLISTED LOOP########
-		newlisted = []
-		for ex in exchDict:
-			inList = False
-			for sym in symDict:
-				if ex["symbol"] == sym["symbol"]:
-					inList = True
-			if inList == False and ex["symbol"][-3:] in TRADEABLE_ASSETS:
-				newlisted.append(ex["symbol"])
-				#print(ex)
-				self._insertSymbol(ex)
-		print(f"New Listed: {newlisted}")
-		#############################
-		#########UPDATE TRENDS#######
-		''' Se obtienen las tendencias de 4 periodos en intervalos de 1S y 1M'''
-		'''symDict = self.getSymbols()
-		for sym in symDict:
-			kline1S = parseKline(client.get_historical_klines(sym['symbol'], Client.KLINE_INTERVAL_1WEEK, "4 weeks ago"))
-			if len(kline1S) > 0:
-				trend = kline1S[-1]["close"]- kline1S[0]["close"]
-				if trend > 0:
-					trendString = "BULL"
-				else:
-					trendString = "BEAR"
-				query = f"UPDATE symbols SET 1S = '{trendString}' WHERE symbol = '{sym['symbol']}'"
-				cur.execute(query)
-				conn.commit()
-			kline1M = parseKline(client.get_historical_klines(sym['symbol'], Client.KLINE_INTERVAL_1MONTH, "4 months ago"))
-			if len(kline1M) > 0:
-				trend = kline1M[-1]["close"]- kline1M[0]["close"]
-				if trend > 0:
-					trendString = "BULL"
-				else:
-					trendString = "BEAR"
-				query = f"UPDATE symbols SET 1M = '{trendString}' WHERE symbol = '{sym['symbol']}'"
-				cur.execute(query)
-				conn.commit()'''
-		#############################
-		########UPDATE PERCENTS######
-		'''symDict = self.getSymbols()
-		for sym in symDict:
-			trades = self.getPairHistoric("scalper", pair= sym["symbol"])
-			if len(trades)>0:
-				aciertos = 0
-				total = 0
-				for trade in trades:
-					total = total + 1
-					if Decimal(trade["sellPrice"]) > Decimal(trade["evalPrice"]):
-						aciertos = aciertos + 1
-				perc = (aciertos/total)*100
-				st = f"UPDATE symbols SET acierto = '{aciertos}', total = '{total}', percent = '{perc}' WHERE symbol = '{sym['symbol']}' "
-				cur.execute(st)
-				conn.commit()'''
-		#################################
-		conn.close()
 	def getOlderServe(self, serveType):
 		"""Recupera la fecha más antigua de servicio de un par en la tabla symbols.
 		Para más información sobre como funcionan los timers de servicio, referirse

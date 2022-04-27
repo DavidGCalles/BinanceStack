@@ -27,6 +27,11 @@ class Test_integration_dbClass(unittest.TestCase):
 		db = dbOPS.DB()
 		symbolArray = db.getSymbols()
 		self.assertGreater(len(symbolArray), 0,"Conexion correcta pero respuesta vacia.")
+	def test_updateSymbols(self):
+		db = dbOPS.DB()
+		user = dbOPS.User("david")
+		user.stage1()
+		self.assertEqual(db.updateSymbols(userClient=user.client),True)
 
 class Test_integration_symbolClass(unittest.TestCase):
 	print("--Integration--Symbol")
@@ -55,17 +60,6 @@ class Test_userClass(unittest.TestCase):
 		user = dbOPS.User("david")
 		self.assertEqual(user.getAPIkeys(), True)
 		self.assertEqual(len(user.apiKeys), 2)
-
-
-
-
-'''class Test_devSpace(unittest.TestCase):
-	def test_binanceClientDEV(self):
-		user = dbOPS.User("david")
-		user.stage1()
-		for symbol in user.client.get_exchange_info()["symbols"]:
-			print(symbol)
-			input()'''
 
 if __name__ == '__main__':
 	unittest.main()
