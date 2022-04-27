@@ -1,3 +1,5 @@
+# EL PROYECTO ESTÁ OFICIALMENTE INUTILIZADO HASTA QUE TERMINE EL REWORK
+
 # Binance Stack
 Este repositorio aspira a proporcionar una plataforma flexible de trading algorítmico, completamente extensible y open source, como base de
 experimentos para los desarrolladores, como uso para backtesting o como trabajador para modelados mas exigentes de ML.
