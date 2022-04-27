@@ -176,6 +176,7 @@ class DB:
 					inOrigin = True
 			if inOrigin == False:
 				changes["add"].append(symRemote)
+		self.logger.info("Comparacion terminada", extra={"data": changes})
 		return changes
 	def updateSymbols(self, userClient):
 		"""Funcion basica para la base de datos. Esta funcion actualiza la tabla symbols con simbolos nuevos
@@ -192,14 +193,18 @@ class DB:
 			if s.parseRaw(sym):
 				exchList.append(s)
 			else:
+				self.logger.critical("Operacion detenida. Ha habido un error en el parser.", extra={"data": sym})
 				return False
 		diff = self._compareSymbols(symDict, exchList)
 		for item in diff["add"]:
 			if item.insertSymbol() == False:
+				self.logger.critical("Operacion detenida. Ha habido un error insertando el elemento.", extra={"data": item.requiriedData["symbol"]})
 				return False
 		for item in diff["remove"]:
 			if item.deleteSymbol() == False:
+				self.logger.critical("Operacion detenida. Ha habido un error eliminando el elemento.", extra={"data": item.requiriedData["symbol"]})
 				return False
+		self.logger.info("Tabla actualizada correctamente")
 		return True
 	#! Metodos antiguos
 	def insertData(self, client, symbol, interval, start, end = datetime.now(), dataTable = "", limit = 100):
@@ -589,7 +594,6 @@ class Symbol(DB):
 			else:
 				self.logger.critical(f"Datos requeridos ausentes", extra={"data": key})
 				return False
-		#print(f"ParsedOK, {self.requiriedData['symbol']}")
 		self.logger.debug("Parsed OK", extra={"data":self.requiriedData["symbol"]})
 		return True
 	def parseRaw(self, rawData):
@@ -628,7 +632,6 @@ class Symbol(DB):
 	def deleteSymbol(self):
 		if self.tryConnect():
 			st = f"DELETE FROM symbols WHERE symbol='{self.requiriedData['symbol']}'"
-			#print(st)
 			try:
 				self.cur.execute(st)
 				self.conn.commit()
